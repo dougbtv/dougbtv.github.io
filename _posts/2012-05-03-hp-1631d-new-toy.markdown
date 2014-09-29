@@ -1,0 +1,17 @@
+---
+author: doug
+comments: true
+date: 2012-05-03 14:13:21+00:00
+layout: post
+slug: hp-1631d-new-toy
+title: 'HP 1631D: New toy!'
+wordpress_id: 148
+categories:
+- tapeDuino
+---
+
+![image](http://dougbtv.com/wp-content/uploads/2012/05/wpid-IMG_20120502_203940.jpg)
+
+
+
+More to come about this lovely lady, I'm just getting to learn how to use her. Here's a shot of an analog trace of tapeDuino's MT8870DE IC's early steering and 1/4 parallel data pins while doing a DTMF decode.

@@ -7,15 +7,15 @@ permalink:        pretty
 relative_permalinks: true
 
 # Setup
-title:            Hyde
-tagline:          'A Jekyll theme'
-description:      'A brazen two-column <a href="http://jekyllrb.com" target="_blank">Jekyll</a> theme that pairs a prominent sidebar with uncomplicated content. Made by <a href="https://twitter.com/mdo" target="_blank">@mdo</a>.'
+title:            dougbtv
+tagline:          'tech-nine, bust an AK'
+description:      'Linux. Full-stack JavaScript. Web apps. Asterisk. Hacking. <a href="https://twitter.com/dougbtv" target="_blank">@dougbtv</a>.'
 url:              http://hyde.getpoole.com
 baseurl:          /
 
 author:
-  name:           'Mark Otto'
-  url:            https://twitter.com/mdo
+  name:           'dougbtv'
+  url:            https://twitter.com/dougbtv
 
 paginate:         5
 
@@ -24,3 +24,7 @@ version:          2.1.0
 
 github:
   repo:           https://github.com/poole/hyde
+
+accounts:
+  github:         https://github.com/dougbtv
+  stackexchange:  http://stackoverflow.com/users/1681171/dougbtv

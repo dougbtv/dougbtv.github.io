@@ -3,28 +3,45 @@ layout: page
 title: About
 ---
 
-<p class="message">
-  Hey there! This page is included as an example. Feel free to customize it for your own use upon downloading. Carry on!
-</p>
+Hey hey hey, it's Doug.
 
-In the novel, *The Strange Case of Dr. Jeykll and Mr. Hyde*, Mr. Poole is Dr. Jekyll's virtuous and loyal butler. Similarly, Poole is an upstanding and effective butler that helps you build Jekyll themes. It's made by [@mdo](https://twitter.com/mdo).
+I'm from [Burlington, VT](http://en.wikipedia.org/wiki/Burlington,_Vermont) (Our airport code is *BTV*, hence *dougbtv*). 
 
-There are currently two themes built on Poole:
+I love to slang code, especially in the [MEAN stack](http://en.wikipedia.org/wiki/MEAN), with a lot of experience in the LAMP stack. I'm all about open source software, and GNU/Linux. I'm a developer at heart, but, I love Linux systems, databases, and devops. I also work a lot on telephony, and custom Asterisk apps at work. Oh yeah, I like mobile dev to an extent too. 
 
-* [Hyde](http://hyde.getpoole.com)
-* [Lanyon](http://lanyon.getpoole.com)
+## Tech
 
-Learn more and contribute on [GitHub](https://github.com/poole).
+Here's some of the technology that I employ professionally on a daily basis, and that I'm frankly... in love with.
 
-## Setup
+* [Node.js](http://nodejs.org/)
+* [AngularJS](https://angularjs.org/)
+* [MongoDB](http://www.mongodb.org/)
+* [MySQL](http://www.mysql.com/)
+* [PHP](http://php.net/)
+* [nginx](http://nginx.org/)
+* [Apache](http://httpd.apache.org/)
+* [Grunt](http://gruntjs.com/)
+* [Bower](http://bower.io/)
+* [Yeoman](http://yeoman.io/)
+* [NPM](https://www.npmjs.org/)
+* [Asterisk](http://www.asterisk.org/)
 
-Some fun facts about the setup of this project include:
+As a hobby, and sometimes semi-professionally, I also get a big charge out of:
 
-* Built for [Jekyll](http://jekyllrb.com)
-* Developed on GitHub and hosted for free on [GitHub Pages](https://pages.github.com)
-* Coded with [Sublime Text 2](http://sublimetext.com), an amazing code editor
-* Designed and developed while listening to music like [Blood Bros Trilogy](https://soundcloud.com/maddecent/sets/blood-bros-series)
+* [Atmel AVRs](http://www.atmel.com/products/microcontrollers/avr/megaavr.aspx)
+* [Arduino](http://www.arduino.cc/)
+* [Raspberry Pi](http://www.raspberrypi.org/)
 
-Have questions or suggestions? Feel free to [open an issue on GitHub](https://github.com/poole/issues/new) or [ask me on Twitter](https://twitter.com/mdo).
+## Links & Projects
 
-Thanks for reading!
+Some links to projects I'm involved with and/or interested in:
+
+* I'm a member of [Laboratory B](http://www.laboratoryb.org/), Burlington's gritty hackerspace. 
+* I've written a programming language for Ethereum contacts called [Sectivum](http://sectivum.io/)
+* [Ethereum](https://www.ethereum.org/) and cryptocurrency in general is a big interest of mine.
+
+This entire blog is written in markdown, and is [available as a github repo](https://github.com/dougbtv/dougbtv.github.io), if you want to get some content out of it in a different way than say, just loading up this web page.
+
+---
+
+This blog layout is made by [@mdo](https://twitter.com/mdo), and it's called [Hyde](http://hyde.getpoole.com). It's powered by [Jekyll](http://jekyllrb.com), and is hosted on [GitHub Pages](https://pages.github.com).

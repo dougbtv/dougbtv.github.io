@@ -21,40 +21,32 @@ Hell, for about 8 zillion years I've been having to google stuff like "cyberciti
 Really, I needed to read [the Centos 7 page on using firewalld in detail, before I got it](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Migration_Planning_Guide/sect-Red_Hat_Enterprise_Linux-Migration_Planning_Guide-Security_and_Access_Control.html). 
 
 Once I figured out that I could define what the zones meant by doing an `--add-source`, it clicked for me. So, here's my cheatsheet of what I did to get my bearings, and I have to say, it's kind of a better world. (I'm still struggling with systemctl... I'm like blinded by oldschool sysv style init scripts). I was really trying to just open up for openVPN and then disable SSH was my first goal, so I used two zones "public" (for everything) and then a specific source for the LAN which I called "trusted". Here, I just really play around so I could test it out and proved that it worked according to my assumptions and newly learned tid-bits about firewalld / firewall-cmd
+    
+```bash
+# Check out what it looks like...
+firewall-cmd --get-active-zones
+firewall-cmd --zone=public --list-all
 
+# Try a port:
+firewall-cmd --zone=public --add-port=5060-5061/udp
+firewall-cmd --zone=public --list-ports
 
-    
-    
-    # Check out what it looks like...
-    
-    firewall-cmd --get-active-zones
-    firewall-cmd --zone=public --list-all
-    
-    # Try a port:
-    
-    firewall-cmd --zone=public --add-port=5060-5061/udp
-    firewall-cmd --zone=public --list-ports
-    
-    # Let's setup the trusted zone:
-    
-    firewall-cmd --permanent --zone=trusted --add-source=192.168.100.0/24
-    firewall-cmd --permanent --zone=trusted --list-sources
-    
-    # I needed to reload before I saw the changes:
-    
-    firewall-cmd --reload
-    firewall-cmd --get-active-zones
-    
-    # Now let's configure that up:
-    
-    firewall-cmd --zone=trusted --add-port=80/tcp --permanent
-    firewall-cmd --zone=trusted --add-port=443/tcp --permanent
-    firewall-cmd --zone=public --add-port=1194/udp --permanent
-    firewall-cmd --zone=public --add-port=1194/tcp --permanent
-    
-    # Now list what you've got
-    
-    firewall-cmd --zone=trusted --list-all
-    firewall-cmd --zone=public --list-all
-    
+# Let's setup the trusted zone:
+firewall-cmd --permanent --zone=trusted --add-source=192.168.100.0/24
+firewall-cmd --permanent --zone=trusted --list-sources
+
+# I needed to reload before I saw the changes:
+firewall-cmd --reload
+firewall-cmd --get-active-zones
+
+# Now let's configure that up:
+firewall-cmd --zone=trusted --add-port=80/tcp --permanent
+firewall-cmd --zone=trusted --add-port=443/tcp --permanent
+firewall-cmd --zone=public --add-port=1194/udp --permanent
+firewall-cmd --zone=public --add-port=1194/tcp --permanent
+
+# Now list what you've got
+firewall-cmd --zone=trusted --list-all
+firewall-cmd --zone=public --list-all
+```
     

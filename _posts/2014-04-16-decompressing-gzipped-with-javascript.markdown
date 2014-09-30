@@ -12,7 +12,7 @@ I found myself in a situation where I needed to work with gzipped files with jav
 
 Additionally, [I've got it posted on PasteAll.](http://www.pasteall.org/50883/javascript) (which is a wicked nice paste bin if you haven't used it, simple, pretty, and run by a really good OSS guy.)
 
-    
+```javascript
     function loadCompressedASCIIFile(request_url) {
     
         var req = new XMLHttpRequest();
@@ -33,7 +33,7 @@ Additionally, [I've got it posted on PasteAll.](http://www.pasteall.org/50883/ja
         // Ok you gotta walk all the characters here, to remove the high-order values.
     
         // Create a byte array.
-        bytes = [];
+        var bytes = [];
     
         // Walk through each character in the stream.
         for (var fileidx = 0; fileidx < rawfile.length; fileidx++) {
@@ -57,7 +57,7 @@ Additionally, [I've got it posted on PasteAll.](http://www.pasteall.org/50883/ja
         return asciistring;
     
     }
-
+```
 
 
 

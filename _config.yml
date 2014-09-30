@@ -9,7 +9,7 @@ relative_permalinks: true
 # Setup
 title:            dougbtv
 tagline:          'tech-nine, bust an AK'
-description:      'Linux. Full-stack JavaScript. Web apps. Asterisk. Hacking. <a href="https://twitter.com/dougbtv" target="_blank">@dougbtv</a>.'
+description:      'Linux. Full-stack JavaScript. Web apps. Asterisk. μC's. <a href="https://twitter.com/dougbtv" target="_blank">@dougbtv</a>.'
 url:              http://hyde.getpoole.com
 baseurl:          /
 

@@ -8,7 +8,7 @@ relative_permalinks: true
 
 # Setup
 title:            dougbtv
-tagline:          'tech-nine, bust an AK'
+tagline:          'slangin code in burlington, vt'
 description:      'Linux. Full-stack JavaScript. Web apps. Asterisk. μC&rsquo;s. <a href="https://twitter.com/dougbtv" target="_blank">@dougbtv</a>.'
 url:              http://hyde.getpoole.com
 baseurl:          /

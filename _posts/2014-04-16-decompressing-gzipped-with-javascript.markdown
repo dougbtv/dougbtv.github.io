@@ -30,7 +30,8 @@ function loadCompressedASCIIFile(request_url) {
     // Here's our raw binary.
     var rawfile = req.responseText;
 
-    // Ok you gotta walk all the characters here, to remove the high-order values.
+    // Ok you gotta walk all the characters here
+    // this is to remove the high-order values.
 
     // Create a byte array.
     var bytes = [];
@@ -42,13 +43,12 @@ function loadCompressedASCIIFile(request_url) {
     }
 
     // Instantiate our zlib object, and gunzip it.    
-    // Requires: https://github.com/imaya/zlib.js/blob/master/bin/gunzip.min.js
+    // Requires: http://goo.gl/PIqhbC [github]
     // (remove the map instruction at the very end.)
     var  gunzip  =  new  Zlib.Gunzip ( bytes ); 
     var  plain  =  gunzip.decompress ();
 
     // Now go ahead and create an ascii string from all those bytes.
-    // Seeing we've just got a big ole byte buffer, but, not an ASCII file.
     var asciistring = "";
     for (var i = 0; i < plain.length; i++) {         
          asciistring += String.fromCharCode(plain[i]);

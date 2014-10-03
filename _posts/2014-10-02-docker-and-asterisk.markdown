@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2014-09-06 12:33:40+00:00
+date: 2014-10-02 12:33:40+00:00
 layout: post
 slug: docker-and-asterisk
 title: Docker and Asterisk

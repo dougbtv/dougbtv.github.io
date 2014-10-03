@@ -8,7 +8,7 @@ title: Docker and Asterisk
 wordpress_id: 333
 ---
 
-Let's get straight to the goods, then we'll example my methodology.
+Let's get straight to the goods, then we'll examine my methodology.
 
 You can clone or fork my [docker-asterisk project on GitHub](https://github.com/dougbtv/docker-asterisk). And/or you can [pull the image from dockerhub](https://registry.hub.docker.com/u/dougbtv/asterisk/).
 

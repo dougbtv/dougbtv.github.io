@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2014-10-02 12:33:40+00:00
+date: 2014-10-18 12:33:40+00:00
 layout: post
 slug: asterisk-autobuilder
 title: Asterisk Autobuilder for Docker

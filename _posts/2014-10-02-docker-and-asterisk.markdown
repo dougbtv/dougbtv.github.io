@@ -52,7 +52,7 @@ There's a couple key steps to getting Asterisk and Docker playing together nicel
 
 On the first bullet point, we'll get over this by using `nsenter`, which requires root or sudo privileges, but, will let you connect to the CLI, which is what I'm after. I was inspired to use this solution from this [article on the docker blog](http://blog.docker.com/2014/06/why-you-dont-need-to-run-sshd-in-docker/). And I got my method of running it [from coderwall](https://coderwall.com/p/xwbraq).
 
-On the second point... Docker doesn't like UDP it seems (which is what the VoIP world runs on). At least in my tests trying to get some IAX2 VoIP over it, on port 4569. (It's an easier test to mock up than SIP!)
+On the second point... Docker doesn't like UDP it seems (which is what the VoIP world runs on). At least in my tests trying to get some IAX2 VoIP over it, on port 4569. (It's an easier test to mock up than SIP!) (Correction: Actually, Docker is fine with UDP, you just have to let it know when you run a docker container, e.g. `docker run -p 4569:4569/udp -t user/tag`)
 
 So, I settled on opening up the network to Docker using the `--net host` parameter on a `docker run`.
 

@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2014-05-21 09:08:00-05:00
+date: 2015-05-21 09:08:00-05:00
 layout: post
 slug: high-availability-asterisk-coreos
 title: High Availability Asterisk using Docker & CoreOS with etcd

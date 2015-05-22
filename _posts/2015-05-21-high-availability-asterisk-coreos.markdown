@@ -10,6 +10,7 @@ title: High Availability Asterisk using Docker & CoreOS with etcd
 After I created my [Docker project for using Asterisk with Docker](https://github.com/dougbtv/docker-asterisk) -- I couldn't leave well enough alone. I wanted to create an Asterisk eco-system that had a number of features that just a stand-alone Asterisk couldn't do for me (while it definitely provides the life-blood of my VoIP systems as it is!)
 
 The things that I really want in an Asterisk setup are:
+
 * High-availability
 * Scalability
 * Visibility (of SIP traffic)
@@ -29,6 +30,7 @@ It also considers the regular maintenance you might do, and will gracefully drai
 This article covers the methodology and philosophy behind the choices used in the `docker-asterisk` project. I will later follow this article with a deep-dive and tutorial into the components behind it and show you just how easy it is to stand-up a scalable HA cluster of Asterisk boxes.
 
 The core application technologies I've chosen for telephony to accomplish this are:
+
 * Asterisk (naturally! For a media server, IVR, PBX or feature server)
 * Kamailio (for load balancing Asterisk)
 * [Homer](http://www.sipcapture.org/) & [captagent](https://github.com/sipcapture/captagent) (for visibility of SIP traffic)

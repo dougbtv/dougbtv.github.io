@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2015-10-14 18:07:00-05:00
+date: 2015-10-14 18:08:00-05:00
 layout: post
 slug: astricon-2015
 title: Astricon 2015: Scaleable High-Availbility Asterisk using Docker and CoreOS

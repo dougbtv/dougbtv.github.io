@@ -42,7 +42,7 @@ ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 
 network={
-    ssid="IamInappropriate"
+    ssid="Name_of_your_wifi_AP"
     psk="fakepassw0rdthatsAQU451goodexamplepassword"
     id_str="Something Descriptive"
 }

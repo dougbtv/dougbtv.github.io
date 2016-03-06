@@ -1,9 +1,11 @@
-# Raspberry Pi Version 3 - Headless Wifi setup
-- Doug
-- @dougbtv
-- 2016/03/03
-- archive
--published
+---
+author: dougbtv
+comments: true
+date: 2016-03-06 09:30:00-05:00
+layout: post
+slug: raspberry-pi-version-3-headless-wifi-setup
+title: Raspberry Pi Version 3 - Headless Wifi setup
+---
 
 So, you got your new Raspberry Pi Version 3 and you want a headless setup, but! You also want wifi, here we go...
 

@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2016-03-06 09:30:00-05:00
+date: 2016-03-05 09:30:00-05:00
 layout: post
 slug: raspberry-pi-version-3-headless-wifi-setup
 title: Raspberry Pi Version 3 - Headless Wifi setup

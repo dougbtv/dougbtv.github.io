@@ -4,10 +4,8 @@ comments: true
 date: 2016-10-27 09:58:00-05:00
 layout: post
 slug: openshift-on-openstack-easy-mode
-title: OpenShift-on-OpenStack - Easy Mode
+title: OpenShift-on-OpenStack - Part 1 - "Easy Mode"
 ---
-
-# OpenShift-on-OpenStack - Part 1 "Easy Mode"
 
 A shift-on-a-stack-on-stack, it's [turtles all the way down](https://en.wikipedia.org/wiki/Turtles_all_the_way_down). It's cool! We're going to first use ["TripleO Quick Start" aka oooq](https://github.com/openstack/tripleo-quickstart) to get our openstack up. The gist here is that we'll use a single baremetal host that we'll call our "virtual machine host" which is going to have a VM to run the undercloud, and then in this simple example we'll use the defaults so that there's just one controller and one compute node.
 

@@ -44,6 +44,7 @@ virsh snapshot-create-as undercloud undercloud-installed-undercloud
 ```
 
 Follow [steps for overcloud deploy](http://ow.ly/c44w304begR).
+
 ```
 ssh -F /home/doug/.quickstart/ssh.config.ansible undercloud
 source stackrc
@@ -54,12 +55,14 @@ openstack baremetal introspection bulk start
 ```
 
 A little post setup. We'll setup subnet DNS
+
 ```
 subnet_id=$(neutron subnet-list | grep -i "start" | awk '{print $2}')
 neutron subnet-update $subnet_id --dns-nameserver 8.8.8.8
 ```
 
 Drum roll please, here's where the magic happens! Not really magic, but, where we'll get an overcloud to deploy compute instances on.
+
 ```
 openstack overcloud deploy --templates
 ```
@@ -123,6 +126,7 @@ chmod 0600 atomic_key.pem
 ```
 
 Spin up a couple instances
+
 ```
 internal_net=$(neutron net-list | awk ' /internal/ {print $2;}')
 nova boot --flavor m1.small --key-name atomic_key --nic net-id=$internal_net --image centos-atomic atomic1

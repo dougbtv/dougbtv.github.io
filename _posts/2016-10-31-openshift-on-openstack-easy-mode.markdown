@@ -68,6 +68,7 @@ openstack overcloud deploy --templates
 ```
 
 Snapshot all the things (so just in case something goes wrong on one or more of these VMs we can revert)
+
 * `virsh snapshot-create-as undercloud undercloud-installed-overcloud`
 * Should you need to revert to a snapshot.
   * `virsh snapshot-revert --domain undercloud undercloud-installed-undercloud`

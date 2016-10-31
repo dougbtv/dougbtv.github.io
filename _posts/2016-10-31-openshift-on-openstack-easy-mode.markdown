@@ -53,20 +53,21 @@ openstack baremetal configure boot
 openstack baremetal introspection bulk start
 ```
 
-* A little post setup
-  * Setup subnet DNS
-    ```
-    subnet_id=$(neutron subnet-list | grep -i "start" | awk '{print $2}')
-    neutron subnet-update $subnet_id --dns-nameserver 8.8.8.8
-    ```
-  * Drum roll please, here's where the magic happens! Not really magic, but, where we'll get an overcloud to deploy compute instances on.
-    ```
-    openstack overcloud deploy --templates
-    ```
-  * Snapshot all the things (so just in case something goes wrong on one or more of these VMs we can revert)
-    * `virsh snapshot-create-as undercloud undercloud-installed-overcloud`
-    * Should you need to revert to a snapshot.
-      * `virsh snapshot-revert --domain undercloud undercloud-installed-undercloud`
+A little post setup. We'll setup subnet DNS
+```
+subnet_id=$(neutron subnet-list | grep -i "start" | awk '{print $2}')
+neutron subnet-update $subnet_id --dns-nameserver 8.8.8.8
+```
+
+Drum roll please, here's where the magic happens! Not really magic, but, where we'll get an overcloud to deploy compute instances on.
+```
+openstack overcloud deploy --templates
+```
+
+Snapshot all the things (so just in case something goes wrong on one or more of these VMs we can revert)
+* `virsh snapshot-create-as undercloud undercloud-installed-overcloud`
+* Should you need to revert to a snapshot.
+  * `virsh snapshot-revert --domain undercloud undercloud-installed-undercloud`
 
 * Connecting to your box
   * You can SSH to the undercloud
@@ -91,9 +92,12 @@ neutron subnet-create int 30.0.0.0/24 --dns_nameservers list=true 8.8.8.8
 neutron router-interface-add router1 $ABOVE_ID
 ```
 
-* Now, create security group rules, we'll do SSH & ICMP for now.
-  * `nova secgroup-add-rule default tcp 22 22 0.0.0.0/0`
-  * `nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0`
+Now, create security group rules, we'll do SSH & ICMP for now.
+
+```
+nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
+nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+```
 
 ## Boot some instances for OpenShift to run on
 
@@ -176,13 +180,12 @@ Now run oc cluster up -- if you've gotten here, it's looking really good. This i
 oc cluster up
 ```
 
-* Let's let that machine talk.
-  * Add port 8443 to default security group
-    ```
-    nova secgroup-add-rule default tcp 8443 8443 0.0.0.0/0
-    nova secgroup-add-rule default tcp 80 80 0.0.0.0/0
-    nova secgroup-add-rule default tcp 443 443 0.0.0.0/0
-    ```
+Let's let that machine talk, add port 8443 and some spares to default security group
+```
+nova secgroup-add-rule default tcp 8443 8443 0.0.0.0/0
+nova secgroup-add-rule default tcp 80 80 0.0.0.0/0
+nova secgroup-add-rule default tcp 443 443 0.0.0.0/0
+```
 
 And of course you can use the `oc` (openshift command) to manage your cluster. So you might want to check out how to [get started with the OpenShift CLI](https://docs.openshift.com/enterprise/3.0/cli_reference/get_started_cli.html).
 

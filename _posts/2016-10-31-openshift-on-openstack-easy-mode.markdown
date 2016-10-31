@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2016-10-27 09:58:00-05:00
+date: 2016-10-31 09:58:00-05:00
 layout: post
 slug: openshift-on-openstack-easy-mode
 title: OpenShift-on-OpenStack - Part 1 - "Easy Mode"

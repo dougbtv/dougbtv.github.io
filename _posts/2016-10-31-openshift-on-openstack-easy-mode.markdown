@@ -173,6 +173,7 @@ docker ps
 ```
 
 Configure an insecure registry
+
 ```
 sudo bash -c "echo \"INSECURE_REGISTRY='--insecure-registry 172.30.0.0/16'\" >> /etc/sysconfig/docker"
 sudo systemctl restart docker

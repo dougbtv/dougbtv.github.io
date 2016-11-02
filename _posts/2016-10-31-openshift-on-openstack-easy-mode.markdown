@@ -129,7 +129,7 @@ chmod 0600 atomic_key.pem
 Spin up a couple instances
 
 ```
-internal_net=$(neutron net-list | awk ' /internal/ {print $2;}')
+internal_net=$(neutron net-list | awk ' /int/ {print $2;}')
 nova boot --flavor m1.small --key-name atomic_key --nic net-id=$internal_net --image centos-atomic atomic1
 nova boot --flavor m1.small --key-name atomic_key --nic net-id=$internal_net --image centos-atomic atomic2
 nova list

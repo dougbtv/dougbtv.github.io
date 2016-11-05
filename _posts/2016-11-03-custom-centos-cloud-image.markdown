@@ -161,12 +161,12 @@ Now you can upload it to glance
 ```
 source ~/overcloudrc
 glance image-create --name centos-custom --disk-format qcow2  --container-format bare --file /tmp/centos-custom.qcow2 --progress
-internal_net=$(neutron net-list | awk ' /int/ {print $2;}')
 ```
 
 And we'll boot an instance to test
 
 ```
+internal_net=$(neutron net-list | awk ' /int/ {print $2;}')
 nova boot --flavor m1.small --key-name atomic_key --nic net-id=$internal_net --image centos-custom centos1
 ```
 

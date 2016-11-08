@@ -8,7 +8,7 @@ permalink:        pretty
 title:            dougbtv
 tagline:          'slangin code in burlington, vt'
 description:      'Linux. NFV. Full-stack JavaScript. Web apps. Asterisk. μC&rsquo;s. <a href="https://twitter.com/dougbtv" target="_blank">@dougbtv</a>.'
-url:              http://hyde.getpoole.com
+url:              http://dougbtv.com/
 baseurl:          /
 
 author:
@@ -21,7 +21,7 @@ paginate:         5
 version:          2.1.0
 
 github:
-  repo:           https://github.com/poole/hyde
+  repo:           https://github.com/dougbtv/dougbtv.github.io
 
 accounts:
   github:         https://github.com/dougbtv

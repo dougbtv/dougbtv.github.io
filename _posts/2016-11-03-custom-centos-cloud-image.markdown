@@ -5,6 +5,7 @@ date: 2016-11-03 13:42:01-05:00
 layout: post
 slug: custom-centos-cloud-image
 title: Creating a Custom Centos Cloud Image (for OpenStack)
+category: nfvpe
 ---
 
 So I'm working on getting [openshift-ansible](https://github.com/openshift/openshift-ansible) to spin up on top of OpenStack. And I've run into a few snags, one of which requires that I need to make a custom cloud image to run because the [CentOS Generic Cloud image](http://cloud.centos.org/centos/7/images/) doesn't have NetworkManager install/enabled, and... Even worse but maybe a story for another day is that it doesn't support a [Centos Atomic Host](https://wiki.centos.org/SpecialInterestGroup/Atomic/Download/). Another approach would be to try to improve the Ansible script in openshift-ansible, however, this slices the [Gordian Knot](https://en.wikipedia.org/wiki/Gordian_Knot) for now, and we'll come back to that another time (as there's plenty else to let ansible-openshift know about as you'll find out in an upcoming article).

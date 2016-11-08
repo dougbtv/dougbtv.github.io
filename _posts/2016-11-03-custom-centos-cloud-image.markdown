@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2016-11-03 13:42:00-05:00
+date: 2016-11-03 13:42:01-05:00
 layout: post
 slug: custom-centos-cloud-image
 title: Creating a Custom Centos Cloud Image (for OpenStack)
@@ -148,6 +148,12 @@ And you should be left with a centos image...
 ```
 [root@localhost tmp]# ls -lathr centos.qcow2 
 -rw-r--r-- 1 root root 1.5G Nov  3 11:59 centos.qcow2
+```
+
+But wait... [THERE'S MORE](https://i.memecaptain.com/gend_images/0-_FtA.jpg). Turns out that I don't want to have this machine be in eastern standard time, which it wound up being, so I used `virt-customize` to change the `/etc/localtime` link to UTC.
+
+```
+virt-customize -a centos.qcow2 --run-command 'rm -f /etc/localtime && ln -s /usr/share/zoneinfo/UTC /etc/localtime' 
 ```
 
 Voila! Now send it where to your undercloud, if you're me.

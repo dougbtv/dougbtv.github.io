@@ -3,7 +3,7 @@ author: dougbtv
 comments: true
 date: 2016-11-09 17:16:10-05:00
 layout: post
-slug: openshift-on-openstack0-openshift-ansible
+slug: openshift-on-openstack-openshift-ansible
 title: OpenShift-on-OpenStack - Creating a cluster with openshift-ansible
 category: nfvpe
 ---

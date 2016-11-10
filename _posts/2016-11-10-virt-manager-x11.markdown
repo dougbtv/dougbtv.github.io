@@ -1,20 +1,18 @@
 ---
 author: dougbtv
 comments: true
-date: 2016-10-27 09:58:00-05:00
+date: 2016-11-10 14:57:00-05:00
 layout: post
 slug: virt-manager-x11
 title: virt-manager with X11 forwarding
 ---
 
-So, usually I am like the guy to poo-poo using a GUI for something. Like, I've been using MySQL for over 15 years, I hate using a GUI for it, it just slows me down. But, everyone becomes a newb at something at some point, so, a GUI can help you out. It can introduce you to new ideas, and it can help guide you to things that you may have been unaware of, and it can be pragmatic -- it can help you do something right now that you couldn't do without (because you're new, and you don't know yet)
+Sometimes you just wanna see your machines in virt-manager, and the console is handy, too, right? `virsh` is awesome and all, but, sometimes I just like having the GUI. For me with a default CentOS 7 minimal install and using oooq (Triple-O Quick start) there's a few extra steps that I needed.
 
-So I use libvirt for VMs for development on my laptop for a long time now. And yes, I'd create XML definitions and I'd manage them with Ansible, and do fairly advanced things, but, I've got to use them at a deeper level now, and I'm feeling like a n00b. 
-
-First things first, so you ssh to your box:
+First things first, if you ssh to your box with x11 forwarding like so:
 
 ```
-ssh -X root@eendracht
+ssh -Y stack@eendracht
 ```
 
 But, I'd get a 
@@ -35,19 +33,15 @@ And I also needed to install `xauth`
 sudo yum install -y xauth
 ```
 
-And then did a `systemctl restart sshd`, and that went away, but, I'd go to start virt-manager, and I'd get:
+And then `systemctl restart sshd`, and... again
 
 ```
-[root@eendracht ~]# virt-manager 
-[root@eendracht ~]# 
-** (virt-manager:28203): WARNING **: Could not open X display
-
-(virt-manager:28203): Gtk-CRITICAL **: gtk_settings_get_for_screen: assertion 'GDK_IS_SCREEN (screen)' failed
-(virt-manager:28203): Gtk-CRITICAL **: _gtk_settings_get_style_cascade: assertion 'GTK_IS_SETTINGS (settings)' failed
-(virt-manager:28203): Gtk-CRITICAL **: _gtk_style_provider_private_lookup: assertion 'GTK_IS_STYLE_PROVIDER_PRIVATE (provider)' failed
-(virt-manager:28203): Gtk-CRITICAL **: _gtk_css_lookup_resolve: assertion 'GTK_IS_STYLE_PROVIDER_PRIVATE (provider)' failed
-
-[... and a lot more ...]
+ssh -Y stack@eendracht
+virt-manager
 ```
 
-But man all of this is a pain when you can just have `virt-manager` on your client machine and do "File -> New Connection" and use SSH and provide the hostname and user. And you already have SSH keys. That's the way to do it.
+And away you go! But, tip and word to the wise... With virt-manager, it's not going to look for your "user session" by default. So go ahead and in virt-manager GUI go and browse to "File -> Add Connection..." and from there in "Hypervisor" dropdown choose the "QEMU/KVM user session". Now you should see the hosts that oooq created under the stack user.
+
+![virt-manager user session](http://i.imgur.com/OoaNPj4.png "Where to find the user session in virt-manager")
+
+I used to like to just use the virt-manager local to my machine and use an SSH session, however, I haven't yet found a way to directly do that AND also use the user session.

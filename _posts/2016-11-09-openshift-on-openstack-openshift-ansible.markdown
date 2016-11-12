@@ -13,7 +13,8 @@ We're going to try to use the [openshift-ansible](https://github.com/openshift/o
 Before you begin, I recommend you check out the process to [build a custom CentOS cloud image](http://dougbtv.com/nfvpe/2016/11/03/custom-centos-cloud-image/) as it's going to be required here.
 
 ---
-# Openstack setup
+
+## Openstack setup
 
 Using the ["easy mode" article](http://dougbtv.com/nfvpe/2016/10/31/openshift-on-openstack-easy-mode/) as a starting point, get yourself an overcloud up with oooq.
 
@@ -154,6 +155,7 @@ sed -i 's/timeout 3/timeout 10/' playbooks/openstack/openshift-cluster/launch.ym
 ```
 
 ----
+
 ## OpenShift cluster creator method and pitfalls.
 
 tl;dr -- If you're not concerned with the gotchyas, just move to the next section with what to do next. But come back here if you get stuck somewhere.
@@ -185,6 +187,7 @@ I've included a sed command herein to fix it for you, but, I've also opened a [P
 The docs for [openshift-ansible with openstack](https://github.com/openshift/openshift-ansible/blob/master/README_openstack.md) didn't originally tell you you're going to need to install a Python module, so I include it in the issues here and in my instruction, but they have merged my [documentation fix in this PR](https://github.com/openshift/openshift-ansible/pull/2732).
 
 ----
+
 ## Run the cluster creator
 
 Let's move on to brewing up our install command. You'll note here that we're specifying the `centos-custom` image, which we created in [this article](http://dougbtv.com/2016/11/03/custom-centos-cloud-image/).
@@ -211,6 +214,7 @@ infra     - 192.168.137.3 - 192.168.24.103
 ```
 
 ----
+
 ## Accessing OpenShift
 
 Ok, let's ssh into the master, since we didn't specify any specific SSH keys above, if we are using the stack user in our undercloud, it's going to have the right key. Note that we ssh as the `openshift` user.
@@ -263,6 +267,7 @@ NAME            STATUS                     AGE
 Since `192.168.137.4` is my master, I think I'm OK with "scheduling disabled" for now, I'm guessing I don't want to schedule containers there for the moment.
 
 ----
+
 ## OpenShift Projects
 
 Ok, still on the master, let's look at the projects available, you can do this with `oc projects` command

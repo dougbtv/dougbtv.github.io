@@ -50,6 +50,7 @@ Options available
 ```
 
 Figured out I could show what was there.
+
 ```
 (GSM7224) #show network
 

@@ -170,6 +170,10 @@ If you're looking for another reference on how bring up a cluster with OpenShift
 
 Currently I've run into a few issues that I've opened issues and PR's for (err, PR's for most), which I have somewhat fixed herein. At some point, I may circle around and try to improve the playbooks and submit a PR so that this happens more smoothly. However, after working through most of the kinks (as described here), I feel it's less necessary.
 
+**Above all, make sure the time is right on all your undercloud/overcloud machines**
+
+In the process of installing OpenShift, a CA is created and it's quite time-based, especially the start dates for the certificates as created for etcd (discovery service), it needs HTTPS and create a bunch of SSL certificates, and if the time is wrong... It could cause some major failures. I struggled with this quite a bit looking in all the wrong places. If you see the `origin-master` service having trouble starting during the install -- this could likely be the case. You can read my struggles as I opened [in this issue](https://github.com/openshift/openshift-ansible/issues/2110) (and then later realized it was really the clocks on the underlying machines).
+
 **One, if the heat create succeeds, but, further playbook errors occur, rebuilding the heat stack is nearly impossible with the playbook.**
 
 So I've gone ahead and created a script that helps you manually hoe out the networking created by ansible openshift. It just forcefully tears it out.
@@ -203,7 +207,7 @@ bin/cluster create \
 
 If you'd like more nodes add the `-n $number_of_nodes` to your cluster create command.
 
-Here's my list... (I reformatted mine, fwiw.)
+This results in a list of openshift nodes -- here's my resulting list... (I reformatted mine, fwiw.)
 
 ```
 role      -  private IP  -    public IP               

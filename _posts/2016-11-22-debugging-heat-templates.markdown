@@ -18,6 +18,7 @@ I've also collected a fair number of links & resources for helping you out in th
 
 * [TripleO Network Isolation document](http://docs.openstack.org/developer/tripleo-docs/advanced_deployment/network_isolation.html#using-the-native-vlan-for-floating-ips)
 * [Red Hat docs on isolating networks](https://access.redhat.com/documentation/en/red-hat-openstack-platform/8/paged/director-installation-and-usage/62-isolating-networks)
+* [THE TripleO Heat templates on GitHub](https://github.com/openstack/tripleo-heat-templates)
 
 ## Troubleshooting
 
@@ -26,7 +27,6 @@ I've also collected a fair number of links & resources for helping you out in th
 * [TripleO "Troubleshooting a failed overcloud deploy"](http://docs.openstack.org/developer/tripleo-docs/troubleshooting/troubleshooting-overcloud.html)
   * This comes up almost every time you google something about your failed overcloud, huh? Does for me, too.
 * [OpenStack Heat Troubleshooting guide](https://wiki.openstack.org/wiki/Heat/TroubleShooting)
-* [THE TripleO Heat templates on GitHub](https://github.com/openstack/tripleo-heat-templates)
 * [fatmin's intro to troubleshooting heat](https://fatmin.com/2016/03/01/openstack-introduction-to-troubleshooting-heat/)
 * [If you have O'Reilly Safari, OpenStack essentials has a chapter](https://www.safaribooksonline.com/library/view/openstack-essentials/9781783987085/ch13s12.html)
 * [The RHOSP 7 heat troubleshooting guide](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux_OpenStack_Platform/7/html/Director_Installation_and_Usage/sect-Troubleshooting_Overcloud_Creation.html)

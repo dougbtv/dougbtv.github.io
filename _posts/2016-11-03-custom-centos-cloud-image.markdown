@@ -26,7 +26,7 @@ You might need a few tools...
 Download the minimal ISO
 
 ```
-[doug@localhost Downloads]$ wget http://mirror.math.princeton.edu/pub/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1511.iso
+[doug@localhost Downloads]$ wget http://mirrors.greenmountainaccess.net/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1511.iso 
 [doug@localhost Downloads]$ mv CentOS-7-x86_64-Minimal-1511.iso /tmp/
 [doug@localhost Downloads]$ cd /tmp/
 [doug@localhost tmp]$ qemu-img create -f qcow2 /tmp/centos.qcow2 10G

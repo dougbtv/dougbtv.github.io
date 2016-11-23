@@ -138,7 +138,7 @@ ssh -F /home/doug/.quickstart/ssh.config.ansible stack@undercloud
 . ~/overcloudrc
 
 # Here's our package deps (need Ansible >= 2.1.0, 2.2 preferred, and Jinja >= 2.7)
-sudo yum install -y ansible pyOpenSSL python-cryptography python-novaclient python-neutronclient python-heatclient
+sudo yum install -y ansible pyOpenSSL python-cryptography python-novaclient python-neutronclient python-heatclient python-pip
 
 # Apparently we needed this to run the cluster creator (wasn't in the docs, but is now after a PR)
 sudo pip install shade

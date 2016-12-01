@@ -10,7 +10,9 @@ category: nfvpe
 
 We're going to spin up a simple implementation of Kuryr. Kuryr is a Docker network driver for Neutron that I'm pretty excited about. And especially pumped to get it to run on OpenShift (and doubly so there, OpenShift on OpenStack). Of all of the things that's gotten me exicted is [this video from OpenStack Summit](https://www.openstack.org/videos/video/project-kuryr-docker-delivered-kubernetes-next) Austin. We'll use an existing openstack to spin up an instance, and in that instance we'll run devstack (I guess that would be Quintiple-O in my case as this is a devstack ontop of Triple-O). On that box, we'll run kuryr. I recently visited the crew in `#openstack-kuryr` on Freenode and I found that they're currently working on kuryr for openshift-on-openstack (awesome!). I can't hardly wait.
 
-------
+---
+
+
 ## Let's get devstack up.
 
 To get started I used a portmanteau of [devstack quick start](http://docs.openstack.org/developer/devstack/) and the [all in one single vm with cloud-init instructions](http://docs.openstack.org/developer/devstack/guides/single-vm.html).
@@ -110,6 +112,7 @@ export OS_TENANT_NAME=admin
 ```
 
 ---
+
 ## Onto Kuryr!
 
 Alright, so that's looking great, let's try kuryr. We're going to be using [Kuryr-libnetwork documentation](http://docs.openstack.org/developer/kuryr-libnetwork/readme.html#kuryr-libnetwork)

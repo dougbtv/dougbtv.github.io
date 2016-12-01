@@ -1,0 +1,289 @@
+---
+author: dougbtv
+comments: true
+date: 2016-11-29 15:05:10-05:00
+layout: post
+slug: kuryr
+title: Let's try Kuryr!
+category: nfvpe
+---
+
+We're going to spin up a simple implementation of Kuryr. Kuryr is a Docker network driver for Neutron that I'm pretty excited about. And especially pumped to get it to run on OpenShift (and doubly so there, OpenShift on OpenStack). Of all of the things that's gotten me exicted is [this video from OpenStack Summit](https://www.openstack.org/videos/video/project-kuryr-docker-delivered-kubernetes-next) Austin. We'll use an existing openstack to spin up an instance, and in that instance we'll run devstack (I guess that would be Quintiple-O in my case as this is a devstack ontop of Triple-O). On that box, we'll run kuryr. I recently visited the crew in `#openstack-kuryr` on Freenode and I found that they're currently working on kuryr for openshift-on-openstack (awesome!). I can't hardly wait.
+
+------
+## Let's get devstack up.
+
+To get started I used a portmanteau of [devstack quick start](http://docs.openstack.org/developer/devstack/) and the [all in one single vm with cloud-init instructions](http://docs.openstack.org/developer/devstack/guides/single-vm.html).
+
+If you don't want to use this all-in-one-vm method ontop of an existing openstack, just go ahead and follow the quick start on your own and skip down to the "Onto Kuryr!" section.
+
+So I went ahead and made a file `devstack-init.txt` based on the exmaple I found in the all in one single vm with cloud-init instructions and I also referenced [this blog article](https://arnesund.com/2015/02/05/how-to-use-cloud-init-to-customize-new-openstack-vms/) Because I like a few extra references. In short, this adds a user named `stack`, tosses a shell script in their home dir, and then runs that script to install git, clone devstack and then set a few passwords in `local.conf`.
+
+```
+[stack@undercloud ~]$ cat devstack-init.txt 
+#cloud-config
+
+users:
+  - default
+  - name: stack
+    lock_passwd: False
+    sudo: ["ALL=(ALL) NOPASSWD:ALL\nDefaults:stack !requiretty"]
+    shell: /bin/bash
+
+write_files:
+  - content: |
+        #!/bin/sh
+        sudo yum install -y nano git
+        sudo chown stack:stack /home/stack
+        cd /home/stack
+        git clone https://git.openstack.org/openstack-dev/devstack
+        cd devstack
+        echo '[[local|localrc]]' > local.conf
+        echo ADMIN_PASSWORD=password >> local.conf
+        echo DATABASE_PASSWORD=password >> local.conf
+        echo RABBIT_PASSWORD=password >> local.conf
+        echo SERVICE_PASSWORD=password >> local.conf
+        ./stack.sh
+    path: /home/stack/start.sh
+    permissions: 0755
+
+runcmd:
+  - su -l stack ./start.sh
+```
+
+And then I booted specifying the [--user-data](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux_OpenStack_Platform/4/html/End_User_Guide/user-data.html) like:
+
+```
+[stack@undercloud ~]$ internal_net=$(neutron net-list | awk ' /int/ {print $2;}')
+[stack@undercloud ~]$ nova boot --flavor m1.ramheavy --key-name atomic_key --nic net-id=$internal_net --user-data devstack-init.txt --image centos-generic devstack
+```
+
+(A few notes: I made my own flavor for this, you can sub in any flavor you want, recommending 4+ gigs, I used 16 gigs cause I've got the overhead. Also, the image is a CentOS Generic Cloud image. I also assigned a floating IP so I could access the box from an external network, and I used a key that I keep handy around for it. You can see some of my previous blog entries if you need help with uploading a glance image, creating nova keys, or creating internal/external networks.)
+
+Let that bad boy boot right up, and give 'er some time to install devstack. While it's working you can go ahead and tail the cloud-init logs a la:
+
+```
+[user@your_laptop ~]$ ssh -i atomic_key centos@192.168.1.156
+[centos@devstack ~]$ sudo tail -f /var/log/cloud-init.log 
+```
+
+When it's finished it'll give you some information about where Horizon & Keystone are and all that good stuff, such as:
+
+```
+Dec  1 17:39:17 localhost cloud-init: This is your host IP address: 30.0.0.15
+Dec  1 17:39:17 localhost cloud-init: This is your host IPv6 address: ::1
+Dec  1 17:39:17 localhost cloud-init: Horizon is now available at http://30.0.0.15/dashboard
+Dec  1 17:39:17 localhost cloud-init: Keystone is serving at http://30.0.0.15/identity/
+Dec  1 17:39:17 localhost cloud-init: The default users are: admin and demo
+Dec  1 17:39:17 localhost cloud-init: The password: password
+```
+
+Being used to TripleO I was expecting to find a `stackrc` file in the stack user's home. Not so, or, at least not immediately apprent just obviously looking for that file. 
+
+That having been said and I might be missing something I made my own `cloudrc` file and you can too (doesn't take long), I sourced it, and then I ran `neutron net-list` just to see if things are working
+
+```
+-bash-4.2$ whoami
+stack
+-bash-4.2$ pwd
+/home/stack
+-bash-4.2$ cat cloudrc 
+export OS_NO_CACHE=True
+export OS_AUTH_URL=http://30.0.0.15:5000/v2.0
+export NOVA_VERSION=1.1
+export COMPUTE_API_VERSION=1.1
+export OS_USERNAME=admin
+export OS_PASSWORD=password
+export OS_TENANT_NAME=admin
+
+-bash-4.2$ source cloudrc 
+-bash-4.2$ neutron net-list
++--------------------------------------+---------+----------------------------------------------------------+
+| id                                   | name    | subnets                                                  |
++--------------------------------------+---------+----------------------------------------------------------+
+| 3d2435a1-1470-4032-afb6-f9235c2024f6 | private | 969eb0eb-f799-4978-9f8a-97846017e7d9 fdca:e1d0:c7a0::/64 |
+|                                      |         | b21aa09e-e042-4da5-955f-432130dd697c 10.0.0.0/26         |
+| 9ae5a213-9be9-4016-8e79-4fcf6d6a0fa6 | public  | 18c4c828-ae79-4260-a9ec-53152a6a7d3a 172.24.4.0/24       |
+|                                      |         | 596ebe49-afc5-4532-8459-543062f2c52d 2001:db8::/64       |
++--------------------------------------+---------+----------------------------------------------------------+
+-bash-4.2$ 
+```
+
+---
+## Onto Kuryr!
+
+Alright, so that's looking great, let's try kuryr. We're going to be using [Kuryr-libnetwork documentation](http://docs.openstack.org/developer/kuryr-libnetwork/readme.html#kuryr-libnetwork)
+
+
+We're going to need a Docker install, so let's install from Docker's RPM repo.
+
+```
+sudo tee /etc/yum.repos.d/docker.repo <<-'EOF'
+[dockerrepo]
+name=Docker Repository
+baseurl=https://yum.dockerproject.org/repo/main/centos/7/
+enabled=1
+gpgcheck=1
+gpgkey=https://yum.dockerproject.org/gpg
+EOF
+```
+
+And then install docker and enable and start the service
+
+```
+-bash-4.2$ sudo yum install -y docker-engine
+-bash-4.2$ sudo systemctl enable docker
+-bash-4.2$ sudo systemctl start docker
+```
+
+Then we're gonna pull the Kuryr image instead of building it for now, we'll learn more about it, and how it's built (probably a lot more) later on.
+
+```
+docker pull kuryr/libnetwork:latest
+```
+
+Then prepare docker to find the driver...
+
+```
+sudo mkdir -p /usr/lib/docker/plugins/kuryr
+[centos@devstack ~]$ sudo mkdir -p /usr/lib/docker/plugins/kuryr
+[centos@devstack ~]$ sudo curl -o /usr/lib/docker/plugins/kuryr/kuryr.spec \
+  https://raw.githubusercontent.com/openstack/kuryr-libnetwork/master/etc/kuryr.spec
+[centos@devstack ~]$ sudo systemctl restart docker
+```
+
+Prepare the docker run command...
+
+```
+docker run --name kuryr-libnetwork \
+  --net=host \
+  --cap-add=NET_ADMIN \
+  -e SERVICE_USER=admin \
+  -e SERVICE_PROJECT_NAME=admin \
+  -e SERVICE_PASSWORD=password \
+  -e SERVICE_DOMAIN_NAME=Default \
+  -e USER_DOMAIN_NAME=Default \
+  -e IDENTITY_URL=http://30.0.0.15:5000/v3 \
+  -v /var/log/kuryr:/var/log/kuryr \
+  -v /var/run/openvswitch:/var/run/openvswitch \
+  kuryr/libnetwork
+
+```
+
+Not that I changed a few things here -- first, my password, and I specified the `IDENTITY_URL` to be for Keystone v3. I also curled it to double check it was the right endpoint. I left `SERVICE_DOMAIN_NAME` & `USER_DOMAIN_NAME` as default.
+
+That'll be running in the foreground, looks like it's running for me, with something like:
+
+```
+[root@devstack centos]# docker run --name kuryr-libnetwork \
+>   --net=host \
+>   --cap-add=NET_ADMIN \
+>   -e SERVICE_USER=admin \
+>   -e SERVICE_PROJECT_NAME=admin \
+>   -e SERVICE_PASSWORD=password \
+>   -e SERVICE_DOMAIN_NAME=Default \
+>   -e USER_DOMAIN_NAME=Default \
+>   -e IDENTITY_URL=http://30.0.0.15:5000/v3 \
+>   -v /var/log/kuryr:/var/log/kuryr \
+>   -v /var/run/openvswitch:/var/run/openvswitch \
+>   kuryr/libnetwork
+*** Starting uWSGI 2.0.13 (64bit) on [Thu Dec  1 19:09:39 2016] ***
+compiled with version: 5.3.0 on 16 May 2016 19:00:18
+os: Linux-3.10.0-327.28.3.el7.x86_64 #1 SMP Thu Aug 18 19:05:49 UTC 2016
+nodename: devstack
+machine: x86_64
+clock source: unix
+pcre jit disabled
+detected number of CPU cores: 4
+current working directory: /
+detected binary path: /usr/sbin/uwsgi
+uWSGI running as root, you can use --uid/--gid/--chroot options
+*** WARNING: you are running uWSGI as root !!! (use the --uid flag) *** 
+your memory page size is 4096 bytes
+detected max file descriptor number: 65536
+lock engine: pthread robust mutexes
+thunder lock: disabled (you can enable it with --thunder-lock)
+uwsgi socket 0 bound to TCP address :23750 fd 3
+Python version: 2.7.12 (default, Jun 29 2016, 08:57:23)  [GCC 5.3.0]
+Python main interpreter initialized at 0x7fecd267a580
+python threads support enabled
+your server socket listen backlog is limited to 100 connections
+your mercy for graceful operations on workers is 60 seconds
+mapped 249168 bytes (243 KB) for 4 cores
+*** Operational MODE: preforking+threaded ***
+WSGI app 0 (mountpoint='') ready in 2 seconds on interpreter 0x7fecd267a580 pid: 8 (default app)
+*** uWSGI is running in multiple interpreter mode ***
+spawned uWSGI master process (pid: 8)
+spawned uWSGI worker 1 (pid: 12, cores: 2)
+spawned uWSGI worker 2 (pid: 13, cores: 2)
+
+```
+
+Alright, that's all well and good, but, now that it's running.... how do we make it "do stuff"? Let's look at that.
+
+Let's use the [documentation from the README on the github page](https://github.com/openstack/kuryr) make a network with it:
+
+```
+[root@devstack centos]# docker network create --driver kuryr test_net
+52abdbb7f76f49d7b39502271da30de66cd1bd0f8899c4766f73e343f23d8179
+[root@devstack centos]# docker network ls
+NETWORK ID          NAME                DRIVER              SCOPE
+bfb511a6c689        bridge              bridge              local               
+dfd800889f92        host                host                local               
+37d8a8e9fc82        none                null                local               
+52abdbb7f76f        test_net            kuryr               local               
+[root@devstack centos]# 
+```
+
+Wooooord! That makes me excited, looks like there's a lot of things working in harmony if we can get to this point.
+
+You can also inspect it if you'd like
+
+```
+[root@devstack centos]# docker network inspect test_net
+```
+
+Looks like for right now we're going to have an isolated subnet using this driver, but, that's OK. Let's spin up a couple instances and ping one from the other.
+
+First instance will be a dummy and then we'll spin up an extra and ping the first.
+
+
+```
+[root@devstack centos]# docker pull centos:centos7
+[root@devstack centos]# docker run --network=test_net -d centos:centos7 /bin/bash -c 'sleep 500'
+[root@devstack centos]# docker run --network=test_net -it --rm centos:centos7 /bin/bash
+```
+
+Ok, now that you have two containers up. The first is a dummy that will be up for 8 minutes. The second one will dump you into an interactive bash shell. 
+
+From another shell, let's inspect the `test_net` we created with a Kuryr driver earlier.
+
+```
+[root@devstack centos]# docker network inspect test_net | grep -i IPv4
+                "IPv4Address": "172.18.0.2/16",
+                "IPv4Address": "172.18.0.3/16",
+```
+
+And we'll go into the interactive shell and we'll ping both for phun and prophit. 
+
+```
+[root@dc83ef2da5fc /]# ping -c2 172.18.0.3 && ping -c2 172.18.0.2
+PING 172.18.0.3 (172.18.0.3) 56(84) bytes of data.
+64 bytes from 172.18.0.3: icmp_seq=1 ttl=64 time=0.321 ms
+64 bytes from 172.18.0.3: icmp_seq=2 ttl=64 time=0.087 ms
+
+--- 172.18.0.3 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1000ms
+rtt min/avg/max/mdev = 0.087/0.204/0.321/0.117 ms
+PING 172.18.0.2 (172.18.0.2) 56(84) bytes of data.
+64 bytes from 172.18.0.2: icmp_seq=1 ttl=64 time=0.024 ms
+64 bytes from 172.18.0.2: icmp_seq=2 ttl=64 time=0.041 ms
+
+--- 172.18.0.2 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 999ms
+rtt min/avg/max/mdev = 0.024/0.032/0.041/0.010 ms
+```
+
+Woo hoo! We can ping containers over it! (Anti-climatic, yet, somehow satisfying.) 
+
+That'll be all for now, in coming articles we'll look at how to actually do something useful with it. And even better, we'll start to look at how cool [kuryr with k8s intergration could be](http://docs.openstack.org/developer/kuryr/specs/mitaka/kuryr_k8s_integration.html)!!! That's the really exciting stuff.

@@ -1,10 +1,10 @@
 ---
 author: dougbtv
 comments: true
-date: 2016-12-05 15:05:10-05:00
+date: 2016-12-06 16:56:10-05:00
 layout: post
 slug: ansible-cira
-title: Hello CIRA!
+title: Hello Ansible CIRA!
 category: nfvpe
 ---
 
@@ -171,3 +171,20 @@ ok: [jenkins_master] => {
 
 If you're like me, this is running on a remote machine, and it's talking to a new bridge, and you don't have access to it over the network, so you'll have to tunnel in to reach them.
 
+You'll find the IPs to use in the out put, and I tunnel like so:
+
+```
+[doug@localhost laboratoryb]$ ssh -L 5601:172.20.0.4:5601 stack@192.168.1.201
+```
+
+And point my browser on my local machine @ `http://localhost:5601`
+
+...Although I don't have anything logged to ES, so it's complaining that there's nothing to find, but, I can get there!
+
+And I can get to Jenkins similarly
+
+```
+[doug@localhost laboratoryb]$ ssh -L 8080:172.20.0.2:8080 stack@192.168.1.201
+```
+
+And that my friends is CIRA up and running! Another time we'll look about how to load it with jobs and how to create jobs to fit a need for testing an openstack reference architecture.

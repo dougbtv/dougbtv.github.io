@@ -3,7 +3,7 @@ author: dougbtv
 comments: true
 date: 2016-12-08 16:46:10-05:00
 layout: post
-slug: ansible-cira
+slug: openshift-s2i-custom-builder
 title: Using OpenShift's s2i custom builder
 category: nfvpe
 ---

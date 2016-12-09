@@ -12,7 +12,7 @@ Let's use OpenShift's s2i [custom building functionality](https://docs.openshift
 
 A little background. I'm exploring a few different build pipelines for Docker images, in a couple different cases (one of which being [CIRA](https://github.com/redhat-nfvpe/ansible-cira)). Naturally my own [Bowline](https://github.com/dougbtv/bowline) comes to mind, and I think it still does fit a particularly good need for both build visibility / build logs, and also for publishing images. However, I'd like to explore the options with doing it all within OpenShift.
 
-Our goal here is going to be to make an image for a custom HTTP server that shows a raster graphic depicting a pickle, and then we can make a "custom application" which is a git repo that gets cloned into here and we can serve up MORE pickle images in this case. So our custom dockerfile has an `index.html` and a single pickle graphic, and then when a custom build is triggered we clone in some pickles that can be viewed (Why all the pickles? Mostly just because it's custom, is really all, and at least mildly more entertaining than just saying "hello world!"). We'll try to both build the image, and then run a container from it.
+Our goal here is going to be to make an image for a custom HTTP server that shows a raster graphic depicting a pickle, and then we can make a "custom application" which is a git repo that gets cloned into here and we can serve up *more* pickle images in this case. So our custom dockerfile has an `index.html` and a single pickle graphic, and then when a custom build is triggered we clone in some pickles that can be viewed (Why all the pickles? Mostly just because it's custom, is really all, and at least mildly more entertaining than just saying "hello world!"). For now we're just going to build the image, and run it manually. In another installment we'll feed this into OpenShift Origin proper and use a builder image there and deploy a pod.
 
 I have an openshift cluster up, and I'm going to ssh into my master and perform these operations there.
 
@@ -235,3 +235,9 @@ We have dynamic content in the `/images` directory in the document root, so let'
 You can see that it's the content from the git clone running in the container created from the `sample-pickle` docker image.
 
 In another article, we'll go into how to add this builder image to your running openshift cluster so that you can deploy pods/containers using it.
+
+## Editorial
+
+The way this is made is rather rapid when it comes to inserting the code, granted -- we're just adding some content to a simple flat HTTP server. I think this might be just the ticket if you're deploying (say) 100 microservices all in the same programming language. Or 100 microservices across 5 programming languages. This could be very convenient.
+
+I'll probably have more to say when it comes to deploying the builder image, and I think this is fairly handy. Where I still like Bowline is that it's rather visual, and gives good visibility of a build process. It also has solid logging to show you what's happening in your builds, and has a lot of opportunities for extensibility. They're really... two different kind of tools. 

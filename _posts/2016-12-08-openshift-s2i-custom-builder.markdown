@@ -1,14 +1,16 @@
 ---
 author: dougbtv
 comments: true
-date: 2016-12-09 15:59:10-05:00
+date: 2016-12-09 15:59:20-05:00
 layout: post
 slug: openshift-s2i-custom-builder
 title: Using OpenShift's s2i custom builder
 category: nfvpe
 ---
 
-Let's use OpenShift's s2i [custom building functionality](https://docs.openshift.com/enterprise/3.0/creating_images/custom.html) to make a [custom image build](https://blog.openshift.com/create-s2i-builder-image/). This walk-through assumes that you have an openshift instance up and running. I have a couple tutorials available on this blog, or you can [just run an all-in-one server](https://docs.openshift.org/latest/getting_started/administrators.html).
+Let's use OpenShift's [s2i](https://github.com/openshift/source-to-image) [custom building functionality](https://docs.openshift.com/enterprise/3.0/creating_images/custom.html) to make a [custom image build](https://blog.openshift.com/create-s2i-builder-image/). Wait, what's `s2i`? It's "source-to-image". The gist here is that you plug into OpenShift's dashboard a git URL, and it combines it into an image. There's already "builder images" pre-loaded into OpenShift, and while those are handy... If you're doing anything more than a bog standard web app -- you're going to need a little more horsepower to put together a custom image. That's why we're going to look at the work-flow to create a custom builder image using s2i.
+
+This walk-through assumes that you have an openshift instance up and running. I have a couple tutorials available on this blog, or you can [just run an all-in-one server](https://docs.openshift.org/latest/getting_started/administrators.html).
 
 A little background. I'm exploring a few different build pipelines for Docker images, in a couple different cases (one of which being [CIRA](https://github.com/redhat-nfvpe/ansible-cira)). Naturally my own [Bowline](https://github.com/dougbtv/bowline) comes to mind, and I think it still does fit a particularly good need for both build visibility / build logs, and also for publishing images. However, I'd like to explore the options with doing it all within OpenShift.
 

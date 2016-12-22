@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2016-11-03 13:42:01-05:00
+date: 2016-11-03 13:42:02-05:00
 layout: post
 slug: custom-centos-cloud-image
 title: Creating a Custom Centos Cloud Image (for OpenStack)
@@ -50,7 +50,7 @@ Now bring up `virt-manager` and attach to a console.
 For the options, I've used the defaults unless otherwise noted here...
 
 * Turn on the ethernet device
-* Used default partitioning scheme.
+* *IMPORTANT* Make sure there's no partition after the root partition, in my case I use a plain partition for `/` and no swap. (Otherwise growing root part won't work)
 * Set a root password, create user "centos" with password "Redhat01" and make them an administrator.
 
 Detach the "CD-ROM" (lol), while you're at it, also disconnect the VHS player. Figure out the device for the CD-ROM, then reboot the instance.
@@ -82,11 +82,11 @@ yum install -y acpid
 systemctl enable acpid
 ```
 
-We're gonna need `cloud-init`, so let's get that up and configured.
+We're gonna need `cloud-init` (and `cloud-utils-growpart`, too, to change our root partition size), so let's get that up and configured.
 
 ```
 yum install -y epel-release.noarch
-yum install -y cloud-init
+yum install -y cloud-init cloud-utils cloud-utils-growpart
 
 # Check what the default user is, mine said "centos" so I'm happy with that.
 grep -A3 "default_user" /etc/cloud/cloud.cfg

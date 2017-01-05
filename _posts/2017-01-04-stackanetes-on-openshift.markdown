@@ -20,6 +20,8 @@ On terminology -- while the Tech Crunch article considers the name Stackanetes u
 
 ## Scope of this walk-through
 
+First thing's first -- [openshift-stackanetes](https://github.com/dougbtv/openshift-stackanetes) is the project we'll focus on to use to spin up Stackanetes on Openshift, it is a series of Ansible roles to help us accomplish getting Stackanetes on OpenShift.
+
 Primarily we'll focus on using an all-in-one OpenShift instance, that is one that uses the `oc cluster up` command to run OpenShift all on a single host, as outlined in the [local cluster management documentation](https://github.com/openshift/origin/blob/master/docs/cluster_up_down.md). My "[openshift on openstack in easy mode](http://dougbtv.com/nfvpe/2016/10/31/openshift-on-openstack-easy-mode/)" goes into some of those details as well. However, the playbooks will take care of this setup for you in this case.
 
 Things we do cover:
@@ -59,6 +61,8 @@ One very interesting part of what stackanetes is that it leverages [KPM registry
 KPM is described as "a tool to deploy and manage application stacks on Kubernetes". I like to think of it as "k8s package manager", and while never exactly branded that way, that makes sense to me. In my own words -- it's a way to take the definition YAML files you'd use to build k8s resources and parameterize them, and then store them in a registry so that you can access them later. In a word: brilliant.
 
 Something I did in the process of creating openshift-stackanetes was to create an [Ansible-Galaxy role for KPM on Centos](https://galaxy.ansible.com/dougbtv/kpm-install/) to get a contemporary revision of kpm client running on CentOS, it's included in the openshift-stackanetes ansible project as a requirement.
+
+Another really great component of s9s is that they've gone ahead and implemented [Traefik](https://github.com/containous/traefik) -- which is a fairly amazing "modern reverse proxy" (Traefik's words). This doles out the HTTP requests to the proper services.
 
 Let's give a quick sweeping overview of the roles as ran by the openshift-stackanetes playbooks:
 
@@ -133,4 +137,127 @@ stackanetes ansible_ssh_host=192.168.1.100 ansible_ssh_user=root
 stackanetes
 ```
 
-Now that you've got that good to go
+### Ansible variable setup
+
+Now that you've got that good to go, you can modify some of our local variables, check out the `vars/main.yml` file to see the variables you can change. 
+
+There's two important variables you may need to change:
+
+* `facter_ipaddress`
+* `minion_interface_name`
+
+Firstly `facter_ipaddress` variable. This is important as the value of this determines how we're going to find your IP address. By default it's set to `ipaddress`. If you're unsure what to put here, go ahead and install facter and check out which value returns the IP address you'd like to use for external access ot the machine.
+
+```
+[root@labstackanetes ~]# yum install -y epel-release
+[root@labstackanetes ~]# yum install -y facter
+[root@labstackanetes ~]# facter | grep -i ipaddress
+ipaddress => 192.168.1.100
+ipaddress_enp1s0f1 => 192.168.1.100
+ipaddress_lo => 127.0.0.1
+```
+
+In this case, you'll see that either `ipaddress` or `ipaddress_enp1s0f1` look like valid choices -- however the `ipaddress` isn't reliable, so choose one based on your NIC.
+
+Next the `minion_interface_name`, additionally important because this is the interface we're going to tell Stackanetes to use for networking for the pods it deploys. This should generally be the same interface that the above ip address came from.
+
+You can either edit the `./vars/main.yml` file or you can pass them in as extra vars e.g. `--extra-vars "facter_ipaddress=ipaddress_enp1s0f1 minion_interface_name=enp1s0f1"`
+
+### Let's run that playbook!
+
+Now that you're setup, you should be able to run the playbook...
+
+The default way you'd run the playbook is with...
+
+```
+$ ansible-playbook -i inventory all-in-one.yml
+```
+
+Or if you're specifying the `--extra-vars`, insert that before the yaml filename.
+
+### If everything has gone well!
+
+It likely may have! If everything has gone as planned, there should be some output that will help you get going...
+
+It should list:
+
+* The location of the openshift dashboard, e.g. `https://yourip:8443`
+* The location of the KPM registry (a cluster.local URL)
+* A series of lines representing a `/etc/hosts` file to put on your client machine.
+
+You should be able to check out the OpenShift dashboard (cockpit) and take a little peek around to see what has happened.
+
+### Possible "gotchyas" and troubleshooting
+
+First thing's first -- you can log into the openshift host and issue:
+
+```
+oc projects
+oc project openstack
+oc get pods
+```
+
+And see if any pods are in error. 
+
+The biggest possibility of what has gone wrong is that etcd in the kpm package didn't come up properly. This happens intermittently to me, and I haven't debugged it, nor opened up an issue with the KPM folks (Unsure if it's how they instantiate etcd or etcd itself, I do know however that spinning up an etcd cluster can be a precarious thing, so, it happens.)
+
+In this case that this happens, go ahead and delete the KPM namespace and run the playbook again, e.g.
+
+```
+# Change away from the kpm project in case you're on it
+oc project default
+# Delete the project / namespace
+oc project delete kpm
+# List the projects to see if it's gone before you re-run
+oc projects
+```
+
+---
+
+## Let's access OpenStack!
+
+Alright! You got this far, nice work... You're fairly brave if you made it this far. I've been having good luck, but, I still appreciate your bravado!
+
+First up -- did you make an `/etc/hosts` file on your local machine? We're not worrying about external DNS yet, so you'll have to do that, it will have entries that look somewhat similar to this but has your IP address of your OpenShift host:
+
+```
+192.168.1.100 identity.openstack.cluster
+192.168.1.100 horizon.openstack.cluster
+192.168.1.100 image.openstack.cluster
+192.168.1.100 network.openstack.cluster
+192.168.1.100 volume.openstack.cluster
+192.168.1.100 compute.openstack.cluster
+192.168.1.100 novnc.compute.openstack.cluster
+192.168.1.100 search.openstack.cluster
+```
+
+So, you can access Horizon (the OpenStack dashboard) by pointing your browser at:
+
+```
+http://horizon.openstack.cluster
+```
+
+Great, now just login with username "admin" and password "password", aka SuperSecure(TM).
+
+Surf around that until you're satisfied that the GUI isn't powerful enough and you now need to hit up the command line ;)
+
+---
+
+## Using the openstack client
+
+Go ahead and SSH into the OpenShift host machine, and in root's home directory you'll find that there's a `stackanetesrc` file available there. It's based on the `/usr/src/stackanetes/env_openstack.sh` file that comes in the Stackanetes git clone.
+
+So you can use it like so and get kickin'
+
+```
+[root@labstackanetes ~]# source ~/stackanetesrc 
+[root@labstackanetes ~]# openstack hypervisor list
++----+----------------------------+-----------------+---------------+-------+
+| ID | Hypervisor Hostname        | Hypervisor Type | Host IP       | State |
++----+----------------------------+-----------------+---------------+-------+
+|  1 | identity.openstack.cluster | QEMU            | 192.168.1.100 | down  |
+|  2 | labstackanetes             | QEMU            | 192.168.1.100 | up    |
++----+----------------------------+-----------------+---------------+-------+
+```
+
+### So how about a cloud instance!?!?!!!

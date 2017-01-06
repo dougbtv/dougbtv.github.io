@@ -261,3 +261,43 @@ So you can use it like so and get kickin'
 ```
 
 ### So how about a cloud instance!?!?!!!
+
+Alright, now that we've sourced our run commands, we can go ahead and configure up our OpenStack so we can run some instances. There's a handy file for a suite demo commands to spin up some instances packaged in Stackanetes itself, my demo here is based on the same. You can find that configuration @ `/usr/src/stackanetes/demo_openstack.sh`.
+
+First up, we download the infamous cirros & upload it to glance.
+
+```
+$ source ~/stackanetesrc 
+$ curl -o /tmp/cirros.qcow2 http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img
+$ openstack image create --disk-format qcow2  --container-format bare  --file /tmp/cirros.qcow2 cirros
+```
+
+Now let's create our networks
+
+```
+# External Net
+$ openstack network create ext-net --external --provider-physical-network physnet1 --provider-network-type flat
+$ openstack subnet create ext-subnet --no-dhcp --allocation-pool start=192.168.1.25,end=192.168.1.50 --network=ext-net --subnet-range 192.168.1.0/24 --gateway 192.168.1.1
+
+# Internal Net
+$ openstack network create int
+$ openstack subnet create int-subnet --allocation-pool start=30.0.0.2,end=30.0.0.254 --network int --subnet-range 30.0.0.0/24 --gateway 30.0.0.1 --dns-nameserver 8.8.8.8 --dns-nameserver 8.8.4.4
+$ openstack router create demo-router
+$ neutron router-interface-add demo-router $(openstack subnet show int-subnet -c id -f value)
+$ neutron router-gateway-set demo-router ext-net
+```
+
+Alright, now let's at least add a flavor.
+
+```
+$ openstack flavor create --public m1.tiny --ram 512 --disk 1 --vcpus 1
+```
+
+Here comes two instances!...
+
+```
+openstack server create cirros1 \
+  --image $(openstack image show cirros -c id -f value) \
+  --flavor $(openstack flavor show m1.tiny -c id -f value) \
+  --nic net-id=$(openstack network show int -c id -f value)
+```

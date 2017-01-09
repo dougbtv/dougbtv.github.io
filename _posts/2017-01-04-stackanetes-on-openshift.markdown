@@ -34,7 +34,7 @@ Things we do cover:
 Things we don't cover:
 
 * High availability (hopefully we'll look at this in a further article)
-* For now, tenant / external networking, we'll just run OpenStack clouds instances in their own isolated network.
+* For now, tenant / external networking, we'll just run OpenStack clouds instances in their own isolated network. (This is kind of a project on its own)
 * In depth usage of OpenStack -- we'll just do enough to get some cloud instances up
 * Spinning up Ceph
 * A sane way of exposing DNS externally (we'll just use a hosts file for our client machines outside of the s9s box)
@@ -277,7 +277,7 @@ Now let's create our networks
 ```
 # External Net
 $ openstack network create ext-net --external --provider-physical-network physnet1 --provider-network-type flat
-$ openstack subnet create ext-subnet --no-dhcp --allocation-pool start=192.168.1.25,end=192.168.1.50 --network=ext-net --subnet-range 192.168.1.0/24 --gateway 192.168.1.1
+$ openstack subnet create ext-subnet --no-dhcp --allocation-pool start=172.17.0.25,end=172.17.0.50 --network=ext-net --subnet-range 172.17.0.0/24 --gateway 172.17.0.1
 
 # Internal Net
 $ openstack network create int
@@ -293,7 +293,14 @@ Alright, now let's at least add a flavor.
 $ openstack flavor create --public m1.tiny --ram 512 --disk 1 --vcpus 1
 ```
 
-Here comes two instances!...
+And a security group
+
+```
+$ openstack security group rule create default --protocol icmp
+$ openstack security group rule create default --protocol tcp --dst-port 22
+```
+
+...Drum roll please. Here comes an instance! 
 
 ```
 openstack server create cirros1 \
@@ -301,3 +308,64 @@ openstack server create cirros1 \
   --flavor $(openstack flavor show m1.tiny -c id -f value) \
   --nic net-id=$(openstack network show int -c id -f value)
 ```
+
+Check that it hasn't errored out with a `nova list`, and then give it a floating IP.
+
+```
+# This should come packaged with a few new deprecation warnings.
+$ openstack ip floating add $(openstack ip floating create ext-net -c floating_ip_address -f value) cirros1
+```
+
+### Let's do something with it!
+
+So, you want to SSH into it? Well... Not yet. Go ahead and use Horizon to access the machine and then console into it, and ping the gateway, `30.0.0.1` in this example, there you go! You did something with it, and over the network.
+
+Currently, I haven't got the provider network working, just a small isolated tenant network. So, we're saving that for next time. We didn't want to spoil all the fun for now, right!?
+
+## Diagnosing a failed Nova instance creation.
+
+So, the Nova instance didn't spin up, huh? There's a few reasons for that. To figure out the reason, first do a 
+
+```
+nova list
+nova show $failed_uuid
+```
+
+That will likely give you a whole lot of nothing more than probably a "no valid host found". Which is essentially, nothing. So you're going to want to look at the Nova compute logs. We can get those with `kubectl` or the `oc` commands.
+
+```
+# Make sure you're on the openstack project
+oc projects
+# Change to that project
+oc project openstack
+# List the pods to find the "nova-compute" pod
+oc get pods
+# Get the logs for that pod
+oc logs nova-compute-3298216887-sriaa | tail -n 10
+```
+
+Or in short.
+
+```
+$ oc logs $(oc get pods | grep compute | awk '{print $1}') | tail -n 50
+```
+
+Now you should be able to see something.
+
+A few things that have happened to me intermittently.
+
+1. You've sized your cluster wrong, or you're using a virtual container host, and it doesn't have nested virtualization. There might not be enough ram or processors for the instance, even though we're using a pretty darn micro instance here.
+
+2. Something busted with openvswitch
+
+I'd get an error like:
+
+```
+ovs-vsctl: unix:/var/run/openvswitch/db.sock: database connection failed (Protocol error)
+```
+
+So what I would do is delete the neutron-openvswitch pod, and it'd automatically deploy again and usually that'd do the trick.
+
+3. One time I had a bad glance image, I just deleted it and uploaded to glance again, I lost the notes for this error but it was something along the lines of "writing to a .part file" errored out.
+
+

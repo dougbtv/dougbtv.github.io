@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-01-04 16:00:00-05:00
+date: 2017-01-09 08:20:00-05:00
 layout: post
 slug: stackanetes-on-openshift
 title: Running Stackanetes on Openshift

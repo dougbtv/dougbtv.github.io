@@ -8,7 +8,7 @@ title: Let's try Kuryr!
 category: nfvpe
 ---
 
-We're going to spin up a simple implementation of Kuryr. Kuryr is a Docker network driver for Neutron that I'm pretty excited about. And especially pumped to get it to run on OpenShift (and doubly so there, OpenShift on OpenStack). Of all of the things that's gotten me exicted is [this video from OpenStack Summit](https://www.openstack.org/videos/video/project-kuryr-docker-delivered-kubernetes-next) Austin. We'll use an existing openstack to spin up an instance, and in that instance we'll run devstack (I guess that would be Quintiple-O in my case as this is a devstack ontop of Triple-O). On that box, we'll run kuryr. I recently visited the crew in `#openstack-kuryr` on Freenode and I found that they're currently working on kuryr for openshift-on-openstack (awesome!). I can't hardly wait.
+We're going to spin up a simple implementation of Kuryr. Kuryr is a Docker network driver for Neutron that I'm pretty excited about. And especially pumped to get it to run on OpenShift (and doubly so there, OpenShift on OpenStack). Of all of the things that's gotten me exicted is [this video from OpenStack Summit](https://www.openstack.org/videos/video/project-kuryr-docker-delivered-kubernetes-next) Austin. We'll use an existing OpenStack to spin up an instance, and in that instance we'll run devstack (I guess that would be Quintiple-O in my case as this is a devstack ontop of Triple-O). On that box, we'll run kuryr. I recently visited the crew in `#openstack-kuryr` on Freenode and I found that they're currently working on kuryr for openshift-on-openstack (awesome!). I can't hardly wait.
 
 ---
 
@@ -17,7 +17,7 @@ We're going to spin up a simple implementation of Kuryr. Kuryr is a Docker netwo
 
 To get started I used a portmanteau of [devstack quick start](http://docs.openstack.org/developer/devstack/) and the [all in one single vm with cloud-init instructions](http://docs.openstack.org/developer/devstack/guides/single-vm.html).
 
-If you don't want to use this all-in-one-vm method ontop of an existing openstack, just go ahead and follow the quick start on your own and skip down to the "Onto Kuryr!" section.
+If you don't want to use this all-in-one-vm method ontop of an existing OpenStack, just go ahead and follow the quick start on your own and skip down to the "Onto Kuryr!" section.
 
 So I went ahead and made a file `devstack-init.txt` based on the exmaple I found in the all in one single vm with cloud-init instructions and I also referenced [this blog article](https://arnesund.com/2015/02/05/how-to-use-cloud-init-to-customize-new-openstack-vms/) Because I like a few extra references. In short, this adds a user named `stack`, tosses a shell script in their home dir, and then runs that script to install git, clone devstack and then set a few passwords in `local.conf`.
 

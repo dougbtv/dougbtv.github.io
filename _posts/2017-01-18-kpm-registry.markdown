@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2016-01-18 09:28:00-05:00
+date: 2017-01-18 09:28:00-05:00
 layout: post
 slug: kpm-registry
 title: Bootstrap a kpm registry to run a kpm registry

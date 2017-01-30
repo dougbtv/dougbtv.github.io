@@ -1,11 +1,10 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-01-18 09:28:00-05:00
+date: 2017-01-18 09:28:01-05:00
 layout: post
 slug: kpm-registry
 title: Bootstrap a kpm registry to run a kpm registry
-category: nfvpe
 ---
 
 Yo dawg... I heard you like kpm-registries. So I bootstrapped a kpm-registry so you can deploy a kpm-registry from a kpm-registry.

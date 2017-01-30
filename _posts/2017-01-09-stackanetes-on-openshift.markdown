@@ -5,7 +5,6 @@ date: 2017-01-09 08:20:00-05:00
 layout: post
 slug: stackanetes-on-openshift
 title: Running Stackanetes on Openshift
-category: nfvpe
 ---
 
 [Stackanetes](https://github.com/stackanetes/stackanetes) is an open-source project that aims to run OpenStack on top of Kubernetes. Today we're going to use a project that I created that uses ansible plays to setup Stackanetes on Openshift, [openshift-stackanetes](https://github.com/dougbtv/openshift-stackanetes). We'll use an all-in-one server approach to setting up openshift in this article to simplify that aspect, and later provide playbooks to launch Stackanetes with a cluster and focus on HA requirements in the future.

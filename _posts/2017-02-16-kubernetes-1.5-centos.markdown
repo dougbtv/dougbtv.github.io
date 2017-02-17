@@ -1,14 +1,18 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-02-16 15:00:01-05:00
+date: 2017-02-16 15:00:02-05:00
 layout: post
 slug: kubernetes-1.5-centos
 title: Let's spin up k8s 1.5 on CentOS (with CNI pod networking, too!)
 category: nfvpe
 ---
 
-Alright, so you've seen my blog [post about installing Kubernetes by hand](http://dougbtv.com/nfvpe/2017/02/09/kubernetes-on-centos/) on CentOS, now... Let's make that easier and do that with an Ansible playbook, specifically my [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbook. This time we'll have Kubernetes 1.5 running on a cluster of 3 VMs, and we'll use weave as a CNI plugin to handle our pod network. And to make it more fun, we'll even expose some pods to the 'outside world', so we can actually (kinda) do something with them. Ready? Let's go!
+Alright, so you've seen my blog [post about installing Kubernetes by hand](http://dougbtv.com/nfvpe/2017/02/09/kubernetes-on-centos/) on CentOS, now... Let's make that easier and do that with an Ansible playbook, specifically my [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbook. This time we'll have Kubernetes 1.5 running on a cluster of 3 VMs, and we'll use ~~weave~~ flannel as a CNI plugin to handle our pod network. And to make it more fun, we'll even expose some pods to the 'outside world', so we can actually (kinda) do something with them. Ready? Let's go!
+
+Note: After writing this article, I later figured out how to use Weave or Flannel. So the playbook now reflects that, and uses Flannel as a default. I didn't overly edit the article to reflect this, however, it shouldn't change the instructions herein. I'll add a note during the steps where you can change it if you'd like.
+
+Why Flannel as default? I prefer it, but, for no particular reason than I'm from Vermont, and we love our flannels here. [These stereotypes are basically 99% true](https://www.theodysseyonline.com/10-stereotypes-vermonters), and yep, I have a closet full of flannel. 
 
 ## What's inside?
 
@@ -118,7 +122,11 @@ ansible_ssh_private_key_file=/home/doug/.ssh/id_testvms
 
 ## Now we can install k8s
 
-Alright, now that the `./inventory/vms.inventory` file is setup, we can get along moving to install k8s! Honestly, the hardest stuff is complete at this point. Let's run it.
+Alright, now that the `./inventory/vms.inventory` file is setup, we can get along moving to install k8s! Honestly, the hardest stuff is complete at this point. 
+
+Remember, flannel will be the default pod networking at this point, if you'd like check out the `./vars/all.yml` and you'll see that near the top there's an option to change it to weave if you'd prefer.
+
+Let's run it!
 
 ```
 $ ansible-playbook -i inventory/vms.inventory kube-install.yml

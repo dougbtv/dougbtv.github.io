@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-02-09 15:10:01-05:00
+date: 2017-02-22 11:35:01-05:00
 layout: post
 slug: multus-cni
 title: So you want to expose a pod to multiple network interfaces? Enter Multus-CNI

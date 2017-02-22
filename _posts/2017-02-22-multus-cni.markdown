@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-02-22 11:35:01-05:00
+date: 2017-02-22 11:35:02-05:00
 layout: post
 slug: multus-cni
 title: So you want to expose a pod to multiple network interfaces? Enter Multus-CNI
@@ -10,19 +10,19 @@ category: nfvpe
 
 Sometimes, one isn't enough. Especially when you've got network requirements that aren't just "your plain old HTTP API". By default in Kubernetes, a pod is exposed only to a loopback and a single interface as assigned by your pod networking. In the telephony world, something we love to do is isolate our signalling, media, and management networks. If you've got those in separate NICs on your container host, how do you expose them to a Kubernetes pod? Let's plug in the [CNI](https://github.com/containernetworking/cni) (container network interface) plugin called [multus-cni](https://github.com/Intel-Corp/multus-cni) into our Kubernetes cluster and we'll expose multiple network interfaces to a (very simple) pod.
 
-Our goal here is going to be to spin up a pod using [the technique describe in this article](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) I wrote about spinning up Kubernetes 1.5 on CentOS -- from there, we'll install multus-cni and configure pod networking so that we expose a pod to two interfaces: 1. To Flannel, and 2. To the host's eth0 nic. 
+Our goal here is going to be to spin up a pod using [the techniques described in this article](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) I wrote about spinning up Kubernetes 1.5 on CentOS -- from there, we'll install multus-cni and configure pod networking so that we expose a pod to two interfaces: 1. To Flannel, and 2. To the host's eth0 nic. 
 
 We'll cover two methods here -- the first being to use my [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbooks and spin it up with "no CNI networking" and install CNI by hand -- this will allow us to familiarize ourselves with the components in detail here. Later, a secondary method using those playbooks will be introduced where it automatically sets up multus-cni using the playbooks, too.
 
 If you're itching to get to the "how to" skip down to the "Let's get started" section below. 
 
-You'll notice that I refer to multus-cni interchangably through this article as "multus-cni" (the Git clone's name) or "Multus", which I guess I inferred from their documentation which reads "MULTUS CNI Plugin", and then describes that "Multus" is Latin -- and I looked it up myself and it generally translates to "many" or "numerous", and their documentation tends to hint at that it may be the root of the prefix "multi-" -- so I checked the etymology on [Merriam-Webster](https://www.merriam-webster.com/dictionary/multi-) and they're right -- it is indeed!
+You'll notice that I refer to multus-cni interchangably through this article as "multus-cni" (the Git clone's name) or "Multus"; which I guess I inferred from their documentation which reads "MULTUS CNI Plugin". Their docs then describe that "Multus" is Latin -- and I looked it up myself and it generally translates to "many" or "numerous", and their documentation tends to hint at that it may be the root of the prefix "multi-" -- so I checked the etymology on [Merriam-Webster](https://www.merriam-webster.com/dictionary/multi-) and they're right -- it is indeed!
 
 ## Taking a look at CNI
 
-Through this process, I got to get exposed to a number of different pieces of CNI that became more and more valuable through the process. And maybe you'll want to learn some more about CNI, too. I won't belabor what CNI is here, but, quickly... 
+Through this process, I was exposed to a number of different pieces of CNI that became more and more valuable through the process. And maybe you'll want to learn some more about CNI, too. I won't belabor what CNI is here, but, quickly... 
 
-One of the first thing is that CNI is not [libnetwork](https://github.com/docker/libnetwork) (the default way Docker connects containers), and you might be wondering [why does k8s doesn't use libnetwork](http://blog.kubernetes.io/2016/01/why-Kubernetes-doesnt-use-libnetwork.html). And if you want to hear it straight from the horse's mouth, check out [the CNI specifications](https://github.com/containernetworking/cni/blob/master/SPEC.md).
+One of the first things is that CNI is not [libnetwork](https://github.com/docker/libnetwork) (the default way Docker connects containers). You might be wondering ["why doesn't k8s use libnetwork?"](http://blog.kubernetes.io/2016/01/why-Kubernetes-doesnt-use-libnetwork.html) And if you want to hear it straight from the horse's mouth, check out [the CNI specifications](https://github.com/containernetworking/cni/blob/master/SPEC.md).
 
 But the most concise way to describe CNI is (quoted from the spec):
 
@@ -30,11 +30,11 @@ But the most concise way to describe CNI is (quoted from the spec):
 
 ## So, what's multus-cni?
 
-That being said multus-cni is a plugin for CNI -- one that allows a pod to be connected to multiple network interfaces, or as the GitHub project description reads rather succinctly, it's "Multi-homed pod cni". And basically what we're going to do is build some Go code for it, and then go ahead and put the binary in the right place so that CNI can execute it. It's... That easy!
+That being said multus-cni is a plugin for CNI -- one that allows a pod to be connected to multiple network interfaces, or as the GitHub project description reads rather succinctly, it's "Multi-homed pod cni". And basically what we're going to do is build some (of their existing) Go code for it, and then go ahead and put the binary in the right place so that CNI can execute it. It's... That easy!
 
 Almost.
 
-Multus is actually fairly simple, but, it requires that you understand some other portions of CNI. One of the most important places you'll need to go is the documentation for [the included CNI plugins](https://github.com/containernetworking/cni/tree/master/Documentation). Because, in my own words as a user -- basically Multus is a wrapper for combining other CNI plugins and basically lets you define a list of plugins you're going to use to expose multiple interfaces to a pod.
+Multus is actually fairly simple to use, but, it requires that you understand some other portions of CNI. One of the most important places you'll need to go is the documentation for [the included CNI plugins](https://github.com/containernetworking/cni/tree/master/Documentation). Because, in my own words as a user -- basically Multus is a wrapper for combining other CNI plugins and basically lets you define a list of plugins you're going to use to expose multiple interfaces to a pod.
 
 I struggled at first especially because I didn't exactly grok that. I was trying to modify a configuration that I thought was specific to multus-cni, but, I was missing that it was wrapping the configuration for other CNI plugins.
 

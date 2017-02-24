@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-02-22 11:35:02-05:00
+date: 2017-02-22 11:35:03-05:00
 layout: post
 slug: multus-cni
 title: So you want to expose a pod to multiple network interfaces? Enter Multus-CNI
@@ -12,7 +12,7 @@ Sometimes, one isn't enough. Especially when you've got network requirements tha
 
 Our goal here is going to be to spin up a pod using [the techniques described in this article](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) I wrote about spinning up Kubernetes 1.5 on CentOS -- from there, we'll install multus-cni and configure pod networking so that we expose a pod to two interfaces: 1. To Flannel, and 2. To the host's eth0 nic. 
 
-We'll cover two methods here -- the first being to use my [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbooks and spin it up with "no CNI networking" and install CNI by hand -- this will allow us to familiarize ourselves with the components in detail here. Later, a secondary method using those playbooks will be introduced where it automatically sets up multus-cni using the playbooks, too.
+We'll cover two methods here -- the first being to use my [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbooks and spin it up with "no CNI networking configured" and configure this CNI plugin by hand -- this will allow us to familiarize ourselves with the components in detail here. Later, a secondary method using those playbooks will be introduced where it automatically sets up multus-cni using the playbooks, too.
 
 If you're itching to get to the "how to" skip down to the "Let's get started" section below. 
 

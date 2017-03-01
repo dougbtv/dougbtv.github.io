@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-02-22 11:35:02-05:00
+date: 2017-02-22 11:35:03-05:00
 layout: post
 slug: multus-cni
 title: So you want to expose a pod to multiple network interfaces? Enter Multus-CNI
@@ -17,6 +17,8 @@ We'll cover two methods here -- the first being to use my [kube-centos-ansible](
 If you're itching to get to the "how to" skip down to the "Let's get started" section below. 
 
 You'll notice that I refer to multus-cni interchangably through this article as "multus-cni" (the Git clone's name) or "Multus"; which I guess I inferred from their documentation which reads "MULTUS CNI Plugin". Their docs then describe that "Multus" is Latin -- and I looked it up myself and it generally translates to "many" or "numerous", and their documentation tends to hint at that it may be the root of the prefix "multi-" -- so I checked the etymology on [Merriam-Webster](https://www.merriam-webster.com/dictionary/multi-) and they're right -- it is indeed!
+
+What about the future? Some of this functionality may wind up in the core of CNI or maybe integrated into included plugins with k8s distributions. I recently was made aware of the [Kubernetes SIG Networking mailing list](https://docs.google.com/document/d/1TW3P4c8auWwYy-w_5afIPDcGNLK3LZf0m14943eVfVg/edit?ts=58877ea7) and I also saw there's a [spec/proposal for "k8s-multiple-networks"](https://docs.google.com/document/d/1TW3P4c8auWwYy-w_5afIPDcGNLK3LZf0m14943eVfVg/edit?ts=58877ea7) which mentions a number of NFV use cases.
 
 ## Taking a look at CNI
 

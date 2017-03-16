@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-03-16 08:50:01-05:00
+date: 2017-03-16 08:50:02-05:00
 layout: post
 slug: ansible-container
 title: A (happy happy joy joy) ansible-container hello world!
@@ -18,7 +18,7 @@ Ok, enough editorializing -- let's get some space madness and move onto getting 
 
 ## Requirements
 
-Fairly simple -- as per usual, we're using a CentOS 7.3 based virtual machine to run all these on. Feel free to use your workstation, but, I put this all in a VM so I could isolate it, and see what you needed given a stock CentOS 7.3 install. Just as a note, my install a CentOS 7.3 generic cloud, and the basics are based on those.
+Fairly simple -- as per usual, we're using a CentOS 7.3 based virtual machine to run all these on. Feel free to use your workstation, but, I put this all in a VM so I could isolate it, and see what you needed given a stock CentOS 7.3 install. Just as a note, my install is from a CentOS 7.3 generic cloud, and the basics are based on that.
 
 Also -- you need a half dozen gigs free of disk, and a minimum of 4 gigs of memory. I had a 2 gig memory VM and it was toast (ahem, powdered toast) when I went to do the image builds, so, keep that in mind.
 

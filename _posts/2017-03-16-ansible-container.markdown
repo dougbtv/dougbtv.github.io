@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-03-16 08:50:03-05:00
+date: 2017-03-16 08:50:04-05:00
 layout: post
 slug: ansible-container
 title: A (happy happy joy joy) ansible-container hello world!
@@ -174,7 +174,7 @@ You'll note there's everything we had before, plus three roles.
 * `nginx-install`: which install (and generally configures) nginx
 * `ren-html` & `stimpy-html`: which places specific HTML files in each container
 
-Now, let's look specifically at the most imporant pieces.
+Now, let's look specifically at the most important pieces.
 
 First, our `container.yml`
 

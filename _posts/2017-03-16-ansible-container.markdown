@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-03-16 08:50:02-05:00
+date: 2017-03-16 08:50:03-05:00
 layout: post
 slug: ansible-container
 title: A (happy happy joy joy) ansible-container hello world!
@@ -95,7 +95,7 @@ Now let's say we're going to install an nginx module from ansible galaxy. We'd d
 [user@host foo]$ ansible-container install j00bar.nginx-container
 ```
 
-Note that this will take a while the first time because it's pulling some ansible-specific containers. 
+Note that this will take a while the first time because it's pulling some ansible-specific images. 
 
 Once it's done with the pull, let's inspect what's there.
 

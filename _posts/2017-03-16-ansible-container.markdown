@@ -287,7 +287,7 @@ Ok, everything's built, let's run it.
 ansible-container run --detached --production
 ```
 
-You can run without --production and it will just run `/bin/false` in the container, which may be confusion, but, it's basically a no-operation and you could use it to inspect the containers in development if you wanted.
+You can run without --production and it will just run `/bin/false` in the container, which may be confusing, but, it's basically a no-operation and you could use it to inspect the containers in development if you wanted.
 
 When that completes, you should see two containers running.
 

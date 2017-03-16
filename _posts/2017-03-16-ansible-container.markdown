@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-03-16 08:50:00-05:00
+date: 2017-03-16 08:50:01-05:00
 layout: post
 slug: ansible-container
 title: A (happy happy joy joy) ansible-container hello world!
@@ -10,7 +10,7 @@ category: nfvpe
 
 Today we're going to explore [ansible-container](https://github.com/ansible/ansible-container), a project that gives you Ansible workflow for Docker. It provides a method of managing container images using ansible commands (so you can avoid a bunch of dirty bash-y Dockerfiles), and then provides a specification of "services" which is eerily similar (on purpose) to docker-compose. It also has paths forward for managing the instances of these containers on Kubernetes & OpenShift -- that's pretty tight. We'll build two images "ren" and "stimpy", which contain nginx and output some Ren & Stimpy quotes so we can get a grip on how it's all put together. It's [better than bad -- it's good](https://www.youtube.com/watch?v=-fQGPZTECYs)!
 
-These steps were generally learned from dually the [ansible-container demo github page](https://ansible.github.io/ansible-container-demo/) and from the [getting started guide](http://docs.ansible.com/ansible-container/getting_started.html). It also leverages this [github project with demo ansiblec-container files](https://github.com/dougbtv/demo-ansible-container) I created which has all the files you need so you don't have to baby them all in an editor.
+These steps were generally learned from dually the [ansible-container demo github page](https://ansible.github.io/ansible-container-demo/) and from the [getting started guide](http://docs.ansible.com/ansible-container/getting_started.html). It also leverages this [github project with demo ansible-container files](https://github.com/dougbtv/demo-ansible-container) I created which has all the files you need so you don't have to baby them all in an editor.
 
 My editorial is that... This is really a great project. However, I don't consider it the be-all-end-all. I think it has an awesome purpose in the context of a larger ansible project. It's squeaky clean when you use it that way. Except for the directory structure which I find a little awkward. Maybe I'm doing that part slightly wrong, it's not terrible. I also think that Dockerfiles have their place. I like them, and in terms of some simpler apps (think, a Go binary) ansible-container is overkill, and your run of the mill pod spec when using k8s, raw and unabstracted isn't so bad to deal with -- in fact, it may be confusing in some places to abstract that. So, choose the right tool for the job is my advice. A-And I'd like a bike, and a Betsy Wetsherself doll, and a Cheesy-Bake Oven, and a Pulpy The Pup doll, and a gajillion green army men.
 

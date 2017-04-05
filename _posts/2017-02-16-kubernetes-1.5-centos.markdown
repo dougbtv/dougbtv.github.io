@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-02-16 15:00:02-05:00
+date: 2017-02-16 15:00:03-05:00
 layout: post
 slug: kubernetes-1.5-centos
 title: Let's spin up k8s 1.5 on CentOS (with CNI pod networking, too!)
@@ -9,6 +9,8 @@ category: nfvpe
 ---
 
 Alright, so you've seen my blog [post about installing Kubernetes by hand](http://dougbtv.com/nfvpe/2017/02/09/kubernetes-on-centos/) on CentOS, now... Let's make that easier and do that with an Ansible playbook, specifically my [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbook. This time we'll have Kubernetes 1.5 running on a cluster of 3 VMs, and we'll use ~~weave~~ flannel as a CNI plugin to handle our pod network. And to make it more fun, we'll even expose some pods to the 'outside world', so we can actually (kinda) do something with them. Ready? Let's go!
+
+*Slight warning & update*: So this article is about using Kube 1.5, right? Well... It uses an RPM based install, and the repo doesn't keep around kubeadm 1.5. So, the playbooks referenced now use Kube 1.6.1 beta as of this update. Everything should be 99% the same. If anything, when you go to use the `kubectl` commands, just do it as the "centos" user on the VMs we spin up here.
 
 Note: After writing this article, I later figured out how to use Weave or Flannel. So the playbook now reflects that, and uses Flannel as a default. I didn't overly edit the article to reflect this, however, it shouldn't change the instructions herein. I'll add a note during the steps where you can change it if you'd like.
 

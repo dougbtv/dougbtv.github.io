@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-04-05 12:04:00-05:00
+date: 2017-04-05 12:04:01-05:00
 layout: post
 slug: vethcon
 title: vethcon - Connect Docker containers together with virtual ethernet connections
@@ -114,7 +114,7 @@ Ok, first let's get *ready* and install the dependencies that we need. Go makes 
 [centos@vethcon ~]$ sudo yum-config-manager     --add-repo     https://download.docker.com/linux/centos/docker-ce.repo
 
 # Install the deps.
-[centos@vethcon ~]$ sudo yum install -y golang git docker
+[centos@vethcon ~]$ sudo yum install -y golang git docker-ce
 
 # Start and enable docker
 [centos@vethcon ~]$ sudo systemctl start docker && sudo systemctl enable docker

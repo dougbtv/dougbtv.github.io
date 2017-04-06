@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-04-05 12:04:01-05:00
+date: 2017-04-05 12:04:02-05:00
 layout: post
 slug: vethcon
 title: vethcon - Connect Docker containers together with virtual ethernet connections
@@ -272,20 +272,22 @@ And we'll start a TCP dump on `centos2` and we'll exec the same ping command as 
 And running that, we can see the pings going to-and-fro!
 
 ```
-[centos@vethcon ~]$ sudo docker exec -it centos2 tcpdump -i net2 'icmp'
+[centos@vethcon ~]$ sudo docker exec -it centos2 tcpdump -nn -i net2 'icmp'
 tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
 listening on net2, link-type EN10MB (Ethernet), capture size 65535 bytes
-12:14:16.966420 IP 10.200.0.1 > 54da996037dc: ICMP echo request, id 37, seq 1, length 64
-12:14:16.966464 IP 54da996037dc > 10.200.0.1: ICMP echo reply, id 37, seq 1, length 64
-12:14:17.965855 IP 10.200.0.1 > 54da996037dc: ICMP echo request, id 37, seq 2, length 64
-12:14:17.965875 IP 54da996037dc > 10.200.0.1: ICMP echo reply, id 37, seq 2, length 64
-12:14:18.965854 IP 10.200.0.1 > 54da996037dc: ICMP echo request, id 37, seq 3, length 64
-12:14:18.965882 IP 54da996037dc > 10.200.0.1: ICMP echo reply, id 37, seq 3, length 64
-12:14:19.965899 IP 10.200.0.1 > 54da996037dc: ICMP echo request, id 37, seq 4, length 64
-12:14:19.965926 IP 54da996037dc > 10.200.0.1: ICMP echo reply, id 37, seq 4, length 64
-12:14:20.965909 IP 10.200.0.1 > 54da996037dc: ICMP echo request, id 37, seq 5, length 64
-12:14:20.965939 IP 54da996037dc > 10.200.0.1: ICMP echo reply, id 37, seq 5, length 64
+12:21:39.426020 IP 10.200.0.1 > 10.200.0.2: ICMP echo request, id 43, seq 1, length 64
+12:21:39.426050 IP 10.200.0.2 > 10.200.0.1: ICMP echo reply, id 43, seq 1, length 64
+12:21:40.425953 IP 10.200.0.1 > 10.200.0.2: ICMP echo request, id 43, seq 2, length 64
+12:21:40.425983 IP 10.200.0.2 > 10.200.0.1: ICMP echo reply, id 43, seq 2, length 64
+12:21:41.425898 IP 10.200.0.1 > 10.200.0.2: ICMP echo request, id 43, seq 3, length 64
+12:21:41.425925 IP 10.200.0.2 > 10.200.0.1: ICMP echo reply, id 43, seq 3, length 64
+12:21:42.425922 IP 10.200.0.1 > 10.200.0.2: ICMP echo request, id 43, seq 4, length 64
+12:21:42.425949 IP 10.200.0.2 > 10.200.0.1: ICMP echo reply, id 43, seq 4, length 64
+12:21:43.425870 IP 10.200.0.1 > 10.200.0.2: ICMP echo request, id 43, seq 5, length 64
+12:21:43.425891 IP 10.200.0.2 > 10.200.0.1: ICMP echo reply, id 43, seq 5, length 64
 ```
+
+(BTW, hit `ctrl+c` when you're done with that `tcpdump`.)
 
 Cool!!! ...Man, sometimes when you're working on networking goodies, the satisfaction of a successful ping is like no other. Ahhhh, feels so good. 
 

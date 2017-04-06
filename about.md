@@ -7,9 +7,9 @@ Hey hey hey, it's Doug.
 
 I'm from [Burlington, VT](http://en.wikipedia.org/wiki/Burlington,_Vermont) (Our airport code is *BTV*, hence *dougbtv*). 
 
-I love to slang code, especially in the [MEAN stack](http://en.wikipedia.org/wiki/MEAN), with a lot of experience in the LAMP stack. I'm all about open source software, and GNU/Linux. I'm a developer at heart, but, I love Linux systems, databases, and devops. I also work a lot on telephony, and custom Asterisk apps at work. Oh yeah, I like mobile dev to an extent too. 
-
 ## Links & Projects
+
+Here's some out of date links. Because, well.... I always forget to look at this about page!
 
 Some links to projects I'm involved with and/or interested in:
 
@@ -22,26 +22,7 @@ This entire blog is written in markdown, and is [available as a github repo](htt
 
 ## Tech
 
-Here's some of the technology that I employ professionally on a daily basis, and that I'm frankly... in love with.
-
-* [Node.js](http://nodejs.org/)
-* [AngularJS](https://angularjs.org/)
-* [MongoDB](http://www.mongodb.org/)
-* [MySQL](http://www.mysql.com/)
-* [PHP](http://php.net/)
-* [nginx](http://nginx.org/)
-* [Apache](http://httpd.apache.org/)
-* [Grunt](http://gruntjs.com/)
-* [Bower](http://bower.io/)
-* [Yeoman](http://yeoman.io/)
-* [NPM](https://www.npmjs.org/)
-* [Asterisk](http://www.asterisk.org/)
-
-As a hobby, and sometimes semi-professionally, I also get a big charge out of:
-
-* [Atmel AVRs](http://www.atmel.com/products/microcontrollers/avr/megaavr.aspx)
-* [Arduino](http://www.arduino.cc/)
-* [Raspberry Pi](http://www.raspberrypi.org/)
+I used to keep a list of tech I'm interested in here, but.... Everything changes faster than I'm able to update this markdown, so.... I removed it :)
 
 ---
 

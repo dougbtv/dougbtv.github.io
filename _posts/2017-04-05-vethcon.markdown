@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-04-05 12:04:03-05:00
+date: 2017-04-05 12:04:04-05:00
 layout: post
 slug: vethcon
 title: vethcon - Connect Docker containers together with virtual ethernet connections
@@ -42,7 +42,7 @@ With network namespaces, in Linux all of your interfaces and routing tables are 
 
 So, what's under the hood? In essence, vethcon uses a few modules and then provides some handling for us to pick out the container namespace and assign veth links to the containers. Its simplicity is its elegance, and quite a good idea.
 
-It's worth noting that vethcon may change after I write this article, so if you're following along with a clone of vethcon -- you might want to know what point in the git history it exists, so I'll point you towards [browing the code at commitish 35c4c58](https://github.com/s1061123/vethcon/tree/35c4c583785000c50c6a307d80cf73d1bcc1b994) if you'd like.
+It's worth noting that vethcon may change after I write this article, so if you're following along with a clone of vethcon -- you might want to know what point in the git history it exists, so I'll point you towards [browsing the code at commitish 35c4c58](https://github.com/s1061123/vethcon/tree/35c4c583785000c50c6a307d80cf73d1bcc1b994) if you'd like.
 
 Let's first look at the modules, then, I'll point you through the code just a touch, in case you wanted to get in there and look a little deeper.
 

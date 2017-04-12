@@ -1,22 +1,24 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-04-05 12:04:04-05:00
+date: 2017-04-05 12:05:04-05:00
 layout: post
-slug: vethcon
-title: vethcon - Connect Docker containers together with virtual ethernet connections
+slug: koko
+title: koko - Connect Containers together with virtual ethernet connections
 category: nfvpe
 ---
 
-Let's dig into [vethcon](https://github.com/s1061123/vethcon) created by [Tomofumi Hayashi](https://github.com/s1061123). vethcon is a utility written in Go that gives us a way to connect containers together with "veth" (virtual ethernet) devices -- a feature available in the Linux kernel. This allows us to specify interfaces that the containers use and link them together -- all without using Linux bridges. vethcon has become a cornerstone of the [zebra-pen](https://github.com/dougbtv/zebra-pen) project, an effort I'm involved in to analyze gaps in containerized NFV workloads, specifically it routes traffic using Quagga, and we setup all the interfaces using vethcon. The project really took a turn for the better when Tomo came up with vethcon and we implemented it in zebra-pen. Ready to see vethcon in action? Let's jump in the pool!
+Let's dig into [koko](https://github.com/s1061123/koko) created by [Tomofumi Hayashi](https://github.com/s1061123). koko (the project's namesake comes from "**CO**ntainer **CO**nnector") is a utility written in Go that gives us a way to connect containers together with "veth" (virtual ethernet) devices -- a feature available in the Linux kernel. This allows us to specify interfaces that the containers use and link them together -- all without using Linux bridges. koko has become a cornerstone of the [zebra-pen](https://github.com/dougbtv/zebra-pen) project, an effort I'm involved in to analyze gaps in containerized NFV workloads, specifically it routes traffic using Quagga, and we setup all the interfaces using koko. The project really took a turn for the better when Tomo came up with koko and we implemented it in zebra-pen. Ready to see koko in action? Let's jump in the pool!
 
-We'll talk about the back-story for what veth interfaces are, and talk a little bit about Linux network namespaces. Then we'll dig into the vethcon source itself and briefly step through what it's doing. 
+Quick note: This article was written before "koko" was name.... "koko" -- it was previously named "vethcon" as it dealt primarily with "veth connections for containers" and that's what we focus on in here. Now, "vethcon" does more than just use "veth" interfaces -- it can also do some cool work with vxlan interfaces to do what we'll do here in this article with vxlan. I did a wholesale find-and-replace of "vethcon" with "koko" and everything should "just work", but, just so you can be forewarned. 
 
-Last but not least -- what fun would it be if we didn't fire up vethcon and get it working? If you're less interested in the back story, just scroll down to the "Ready, set, compile!" section. From there you can get your hands on the keyboard and dive into the fun stuff. Our goal will be to compile vethcon, connect two containers with one another, look at those interfaces and get a ping to come across them. 
+We'll talk about the back-story for what veth interfaces are, and talk a little bit about Linux network namespaces. Then we'll dig into the koko source itself and briefly step through what it's doing. 
+
+Last but not least -- what fun would it be if we didn't fire up koko and get it working? If you're less interested in the back story, just scroll down to the "Ready, set, compile!" section. From there you can get your hands on the keyboard and dive into the fun stuff. Our goal will be to compile koko, connect two containers with one another, look at those interfaces and get a ping to come across them. 
  
-We'll just connect a couple containers together, but, using vethcon you can also connect network namespaces to containers, and network namespaces to network namespaces, too. 
+We'll just connect a couple containers together, but, using koko you can also connect network namespaces to containers, and network namespaces to network namespaces, too. 
 
-Another note before we kick this off -- vethcon's life has really just begun, it's useful and functional as it is. But, Tomo has bigger and better ideas for it -- there's some potential in the future for creating vxlan interfaces, and getting it working with CNI -- but, there's still experimentation to be done there, and I don't want to spoil it by saying too much. So, as I've heard said before "That's another story for another bourbon."
+Another note before we kick this off -- koko's life has really just begun, it's useful and functional as it is. But, Tomo has bigger and better ideas for it -- there's some potential in the future for creating vxlan interfaces (and given that the rename happened, those are in there at least as a prototype), and getting it working with CNI -- but, there's still experimentation to be done there, and I don't want to spoil it by saying too much. So, as I've heard said before "That's another story for another bourbon."
 
 ## Requirements
 
@@ -26,7 +28,7 @@ You're also going to need a spankin' fresh version of Docker. So we'll install f
 
 ## The back-story
 
-vethcon leverages "veth" -- as evidenced by its name. veth interfaces aren't exactly new, [veth devices were proposed way back in '07](https://lwn.net/Articles/232688/). The original authors describe veth as:
+koko leverages "veth" -- as evidenced by its name. veth interfaces aren't exactly new, [veth devices were proposed way back in '07](https://lwn.net/Articles/232688/). The original authors describe veth as:
 
 > Veth stands for Virtual ETHernet. It is a simple tunnel driver
 that works at the link layer and looks like a pair of ethernet
@@ -34,15 +36,15 @@ devices interconnected with each other.
 
 veth interfaces come in pairs, and that's what we'll do in a bit, we'll pair them up together with two containers. If you'd like to see some diagrams of veth pairs in action -- I'll point you to [this article from opencloudblog which has does a nice job illustrating it](http://www.opencloudblog.com/?p=66).
 
-Another concept that's important to the functioning of vethcon is "network namespaces". [Linux namespaces](https://en.wikipedia.org/wiki/Linux_namespaces) is the general concept here that allows network namespaces -- in short they give us a view of resources that are limited to a "namespace". Linux namespaces are a fundamental part of how containers function under Linux, it provides the over-arching functionality that's necessary to segregate processes and users, etc. This isn't new either -- apparently it begun in 2002 with mount-type namespaces.
+Another concept that's important to the functioning of koko is "network namespaces". [Linux namespaces](https://en.wikipedia.org/wiki/Linux_namespaces) is the general concept here that allows network namespaces -- in short they give us a view of resources that are limited to a "namespace". Linux namespaces are a fundamental part of how containers function under Linux, it provides the over-arching functionality that's necessary to segregate processes and users, etc. This isn't new either -- apparently it begun in 2002 with mount-type namespaces.
 
 With network namespaces, in Linux all of your interfaces and routing tables are all mashed together and available to one another. With network namespaces, you can isolate these from one another, so they can work independently from one-another. This will give processes a specific view of these interfaces. 
 
-## Let's look at the vethcon go code.
+## Let's look at the koko go code.
 
-So, what's under the hood? In essence, vethcon uses a few modules and then provides some handling for us to pick out the container namespace and assign veth links to the containers. Its simplicity is its elegance, and quite a good idea.
+So, what's under the hood? In essence, koko uses a few modules and then provides some handling for us to pick out the container namespace and assign veth links to the containers. Its simplicity is its elegance, and quite a good idea.
 
-It's worth noting that vethcon may change after I write this article, so if you're following along with a clone of vethcon -- you might want to know what point in the git history it exists, so I'll point you towards [browsing the code at commitish 35c4c58](https://github.com/s1061123/vethcon/tree/35c4c583785000c50c6a307d80cf73d1bcc1b994) if you'd like.
+It's worth noting that koko may change after I write this article, so if you're following along with a clone of koko -- you might want to know what point in the git history it exists, so I'll point you towards [browsing the code at commitish 35c4c58](https://github.com/s1061123/koko/tree/35c4c583785000c50c6a307d80cf73d1bcc1b994) if you'd like.
 
 Let's first look at the modules, then, I'll point you through the code just a touch, in case you wanted to get in there and look a little deeper.
 
@@ -56,7 +58,9 @@ And other things that are more utilitarian, such as [package context](https://go
 
 ### Application flow
 
-At it's core, vethcon defines a data object called `vEth`, which gives us a structure to store some information about the connections that we'll make.
+*Note: some of this naming may have changed a bit with the koko upgrade*
+
+At it's core, koko defines a data object called `vEth`, which gives us a structure to store some information about the connections that we'll make.
 
 It's a `struct` and is defined as so:
 
@@ -111,16 +115,16 @@ Ok, first let's get *ready* and install the dependencies that we need. Go makes 
 ```bash
 
 # Enable the docker ce repo
-[centos@vethcon ~]$ sudo yum-config-manager     --add-repo     https://download.docker.com/linux/centos/docker-ce.repo
+[centos@koko ~]$ sudo yum-config-manager     --add-repo     https://download.docker.com/linux/centos/docker-ce.repo
 
 # Install the deps.
-[centos@vethcon ~]$ sudo yum install -y golang git docker-ce
+[centos@koko ~]$ sudo yum install -y golang git docker-ce
 
 # Start and enable docker
-[centos@vethcon ~]$ sudo systemctl start docker && sudo systemctl enable docker
+[centos@koko ~]$ sudo systemctl start docker && sudo systemctl enable docker
 
 # Check that docker is working
-[centos@vethcon ~]$ sudo docker ps
+[centos@koko ~]$ sudo docker ps
 
 ```
 
@@ -128,37 +132,37 @@ Now let's *set* the gopath and git clone the code.
 
 ```bash
 # Set the go path
-[centos@vethcon ~]$ rm -Rf gocode/
-[centos@vethcon ~]$ mkdir -p gocode/src
-[centos@vethcon ~]$ export GOPATH=/home/centos/gocode/
+[centos@koko ~]$ rm -Rf gocode/
+[centos@koko ~]$ mkdir -p gocode/src
+[centos@koko ~]$ export GOPATH=/home/centos/gocode/
 
-# Clone vethcon
-[centos@vethcon ~]$ git clone https://github.com/s1061123/vethcon.git /home/centos/gocode/src/vethcon
-
-```
-
-
-Finally, we'll grab the dependencies and *compile* vethcon.
+# Clone koko
+[centos@koko ~]$ git clone https://github.com/s1061123/koko.git /home/centos/gocode/src/koko
 
 ```
-# Fetch the dependencies for vethcon
-[centos@vethcon ~]$ cd gocode/
-[centos@vethcon gocode]$ go get vethcon
+
+
+Finally, we'll grab the dependencies and *compile* koko.
+
+```
+# Fetch the dependencies for koko
+[centos@koko ~]$ cd gocode/
+[centos@koko gocode]$ go get koko
 
 # Now, let's compile it
-[centos@vethcon ~]$ go build vethcon
+[centos@koko ~]$ go build koko
 
 ```
 
 Now you can go ahead and run the help if you'd like.
 
 ```
-[centos@vethcon gocode]$ ./vethcon -h
+[centos@koko gocode]$ ./koko -h
 
 Usage:
-./vethcon -d centos1:link1:192.168.1.1/24 -d centos2:link2:192.168.1.2/24 #with IP addr
-./vethcon -d centos1:link1 -d centos2:link2  #without IP addr
-./vethcon -n /var/run/netns/test1:link1:192.168.1.1/24 <other>  
+./koko -d centos1:link1:192.168.1.1/24 -d centos2:link2:192.168.1.2/24 #with IP addr
+./koko -d centos1:link1 -d centos2:link2  #without IP addr
+./koko -n /var/run/netns/test1:link1:192.168.1.1/24 <other>  
 ```
 
 ## Make a handy-dandy little Docker image
@@ -175,9 +179,9 @@ RUN yum install -y iproute tcpdump
 I just hucked my Dockerfile into tmp and built from there.
 
 ```
-[centos@vethcon gocode]$ cd /tmp/
-[centos@vethcon tmp]$ vi Dockerfile
-[centos@vethcon tmp]$ sudo docker build -t dougbtv/inspect-centos .
+[centos@koko gocode]$ cd /tmp/
+[centos@koko tmp]$ vi Dockerfile
+[centos@koko tmp]$ sudo docker build -t dougbtv/inspect-centos .
 ```
 
 ## Run your containers
@@ -189,26 +193,26 @@ Note that we're going to run these with `--network none` as a demonstration.
 Let's do that now...
 
 ```
-[centos@vethcon gocode]$ sudo docker run --network none -dt --name centos1 dougbtv/inspect-centos /bin/bash
-[centos@vethcon gocode]$ sudo docker run --network none -dt --name centos2 dougbtv/inspect-centos /bin/bash
+[centos@koko gocode]$ sudo docker run --network none -dt --name centos1 dougbtv/inspect-centos /bin/bash
+[centos@koko gocode]$ sudo docker run --network none -dt --name centos2 dougbtv/inspect-centos /bin/bash
 ```
 
 If you exec `ip link` on either of the containers you'll see they only have a local loopback interfaces.
 
 ```
-[centos@vethcon gocode]$ sudo docker exec -it centos1 ip link
+[centos@koko gocode]$ sudo docker exec -it centos1 ip link
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
 ```
 
 That's perfect for us for now.
 
-## Let's give vethcon a run!
+## Let's give koko a run!
 
 Ok, cool, so at this point you should have a couple containers named `centos1` & `centos2` running, and both of those with `--network none` so they only have the local loopback as mentioned.
 
 ```
-[centos@vethcon gocode]$ sudo docker ps --format 'table {{.Names}}    {{.Image}}'
+[centos@koko gocode]$ sudo docker ps --format 'table {{.Names}}    {{.Image}}'
 NAMES               IMAGE
 centos2    dougbtv/inspect-centos
 centos1    dougbtv/inspect-centos
@@ -216,29 +220,29 @@ centos1    dougbtv/inspect-centos
 
 Cool -- now, let's get some network between the two of these containers using vetcon... What we're going to do is put the containers on a network, the `/24` we're going to choose is `10.200.0.0/24` and we'll make network interfaces named `net1` and `net2`.
 
-You pass these into vethcon with colon delimited fields which is like `-d {container-name}:{interface-name}:{ip-address/netmask}`. As we mentioned earlier, since veths are pairs -- you pass in the `-d {stuff}` twice for the pain, one for each container. 
+You pass these into koko with colon delimited fields which is like `-d {container-name}:{interface-name}:{ip-address/netmask}`. As we mentioned earlier, since veths are pairs -- you pass in the `-d {stuff}` twice for the pain, one for each container. 
 
 Note that the container name can either be the name (as we gave it a `--name` in our `docker run` or it can be the container id [the big fat hash]). The interface name must be unique -- it can't match another one on your system, and it must be different
 
-So that means we're going to execute vethcon like this. (Psst, make sure you're in the `~/gocode/` directory we created earlier, unless you moved the vethcon binary somewhere else that's handy.)
+So that means we're going to execute koko like this. (Psst, make sure you're in the `~/gocode/` directory we created earlier, unless you moved the koko binary somewhere else that's handy.)
 
 Drum roll please...
 
 ```
-[centos@vethcon gocode]$ sudo ./vethcon -d centos1:net1:10.200.0.1/24 -d centos2:net2:10.200.0.2/24
+[centos@koko gocode]$ sudo ./koko -d centos1:net1:10.200.0.1/24 -d centos2:net2:10.200.0.2/24
 Create veth...done
 ```
 
 Alright! Now we should have some interfaces called `net1` and `net2` in the `centos1` & `centos2` containers respectively, let's take a look by running `ip addr` on each container. (I took the liberty of grepping for some specifics)
 
 ```
-[centos@vethcon gocode]$ sudo docker exec -it centos1 ip addr | grep -P "^\d|inet "
+[centos@koko gocode]$ sudo docker exec -it centos1 ip addr | grep -P "^\d|inet "
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
     inet 127.0.0.1/8 scope host lo
 28: net1@if27: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP 
     inet 10.200.0.1/24 scope global net1
 
-[centos@vethcon gocode]$ sudo docker exec -it centos2 ip addr | grep -P "^\d|inet "
+[centos@koko gocode]$ sudo docker exec -it centos2 ip addr | grep -P "^\d|inet "
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
     inet 127.0.0.1/8 scope host lo
 27: net2@if28: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP 
@@ -252,7 +256,7 @@ That being said, let's exec a `ping` from `centos1` to `centos2` to prove that i
 Here we go!
 
 ```
-[centos@vethcon gocode]$ sudo docker exec -it centos1 ping -c5 10.200.0.2
+[centos@koko gocode]$ sudo docker exec -it centos1 ping -c5 10.200.0.2
 PING 10.200.0.2 (10.200.0.2) 56(84) bytes of data.
 64 bytes from 10.200.0.2: icmp_seq=1 ttl=64 time=0.063 ms
 64 bytes from 10.200.0.2: icmp_seq=2 ttl=64 time=0.068 ms
@@ -272,7 +276,7 @@ And we'll start a TCP dump on `centos2` and we'll exec the same ping command as 
 And running that, we can see the pings going to-and-fro!
 
 ```
-[centos@vethcon ~]$ sudo docker exec -it centos2 tcpdump -nn -i net2 'icmp'
+[centos@koko ~]$ sudo docker exec -it centos2 tcpdump -nn -i net2 'icmp'
 tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
 listening on net2, link-type EN10MB (Ethernet), capture size 65535 bytes
 12:21:39.426020 IP 10.200.0.1 > 10.200.0.2: ICMP echo request, id 43, seq 1, length 64

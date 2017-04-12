@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-04-05 12:05:04-05:00
+date: 2017-04-05 12:05:05-05:00
 layout: post
 slug: koko
 title: koko - Connect Containers together with virtual ethernet connections
@@ -10,7 +10,7 @@ category: nfvpe
 
 Let's dig into [koko](https://github.com/s1061123/koko) created by [Tomofumi Hayashi](https://github.com/s1061123). koko (the project's namesake comes from "**CO**ntainer **CO**nnector") is a utility written in Go that gives us a way to connect containers together with "veth" (virtual ethernet) devices -- a feature available in the Linux kernel. This allows us to specify interfaces that the containers use and link them together -- all without using Linux bridges. koko has become a cornerstone of the [zebra-pen](https://github.com/dougbtv/zebra-pen) project, an effort I'm involved in to analyze gaps in containerized NFV workloads, specifically it routes traffic using Quagga, and we setup all the interfaces using koko. The project really took a turn for the better when Tomo came up with koko and we implemented it in zebra-pen. Ready to see koko in action? Let's jump in the pool!
 
-Quick note: This article was written before "koko" was name.... "koko" -- it was previously named "vethcon" as it dealt primarily with "veth connections for containers" and that's what we focus on in here. Now, "vethcon" does more than just use "veth" interfaces -- it can also do some cool work with vxlan interfaces to do what we'll do here in this article with vxlan. I did a wholesale find-and-replace of "vethcon" with "koko" and everything should "just work", but, just so you can be forewarned. 
+Quick update note: This article was written before "koko" was named.... "koko"! It was previously named "vethcon" as it dealt primarily with "veth connections for containers" and that's what we focus on in this article. Now, "vethcon" does more than just use "veth" interfaces, and henceforth it was renamed. Now, it can also do some cool work with vxlan interfaces to do what we'll do here -- but also across hosts! This article still focuses on using veth interfaces. I did a wholesale find-and-replace of "vethcon" with "koko" and everything should "just work", but, just so you can be forewarned. 
 
 We'll talk about the back-story for what veth interfaces are, and talk a little bit about Linux network namespaces. Then we'll dig into the koko source itself and briefly step through what it's doing. 
 

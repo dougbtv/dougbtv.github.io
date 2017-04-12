@@ -1,14 +1,14 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-04-05 12:05:05-05:00
+date: 2017-04-05 12:05:06-05:00
 layout: post
 slug: koko
 title: koko - Connect Containers together with virtual ethernet connections
 category: nfvpe
 ---
 
-Let's dig into [koko](https://github.com/s1061123/koko) created by [Tomofumi Hayashi](https://github.com/s1061123). koko (the project's namesake comes from "**CO**ntainer **CO**nnector") is a utility written in Go that gives us a way to connect containers together with "veth" (virtual ethernet) devices -- a feature available in the Linux kernel. This allows us to specify interfaces that the containers use and link them together -- all without using Linux bridges. koko has become a cornerstone of the [zebra-pen](https://github.com/dougbtv/zebra-pen) project, an effort I'm involved in to analyze gaps in containerized NFV workloads, specifically it routes traffic using Quagga, and we setup all the interfaces using koko. The project really took a turn for the better when Tomo came up with koko and we implemented it in zebra-pen. Ready to see koko in action? Let's jump in the pool!
+Let's dig into [koko](https://github.com/redhat-nfvpe/koko) created by [Tomofumi Hayashi](https://github.com/s1061123). koko (the project's namesake comes from "**CO**ntainer **CO**nnector") is a utility written in Go that gives us a way to connect containers together with "veth" (virtual ethernet) devices -- a feature available in the Linux kernel. This allows us to specify interfaces that the containers use and link them together -- all without using Linux bridges. koko has become a cornerstone of the [zebra-pen](https://github.com/dougbtv/zebra-pen) project, an effort I'm involved in to analyze gaps in containerized NFV workloads, specifically it routes traffic using Quagga, and we setup all the interfaces using koko. The project really took a turn for the better when Tomo came up with koko and we implemented it in zebra-pen. Ready to see koko in action? Let's jump in the pool!
 
 Quick update note: This article was written before "koko" was named.... "koko"! It was previously named "vethcon" as it dealt primarily with "veth connections for containers" and that's what we focus on in this article. Now, "vethcon" does more than just use "veth" interfaces, and henceforth it was renamed. Now, it can also do some cool work with vxlan interfaces to do what we'll do here -- but also across hosts! This article still focuses on using veth interfaces. I did a wholesale find-and-replace of "vethcon" with "koko" and everything should "just work", but, just so you can be forewarned. 
 
@@ -44,7 +44,7 @@ With network namespaces, in Linux all of your interfaces and routing tables are 
 
 So, what's under the hood? In essence, koko uses a few modules and then provides some handling for us to pick out the container namespace and assign veth links to the containers. Its simplicity is its elegance, and quite a good idea.
 
-It's worth noting that koko may change after I write this article, so if you're following along with a clone of koko -- you might want to know what point in the git history it exists, so I'll point you towards [browsing the code at commitish 35c4c58](https://github.com/s1061123/koko/tree/35c4c583785000c50c6a307d80cf73d1bcc1b994) if you'd like.
+It's worth noting that koko may change after I write this article, so if you're following along with a clone of koko -- you might want to know what point in the git history it exists, so I'll point you towards [browsing the code at commitish 35c4c58](https://github.com/redhat-nfvpe/koko/tree/35c4c583785000c50c6a307d80cf73d1bcc1b994) if you'd like.
 
 Let's first look at the modules, then, I'll point you through the code just a touch, in case you wanted to get in there and look a little deeper.
 
@@ -137,7 +137,7 @@ Now let's *set* the gopath and git clone the code.
 [centos@koko ~]$ export GOPATH=/home/centos/gocode/
 
 # Clone koko
-[centos@koko ~]$ git clone https://github.com/s1061123/koko.git /home/centos/gocode/src/koko
+[centos@koko ~]$ git clone https://github.com/redhat-nfvpe/koko.git /home/centos/gocode/src/koko
 
 ```
 

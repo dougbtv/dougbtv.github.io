@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-04-05 12:05:06-05:00
+date: 2017-04-05 12:05:08-05:00
 layout: post
 slug: koko
 title: koko - Connect Containers together with virtual ethernet connections
@@ -38,7 +38,7 @@ veth interfaces come in pairs, and that's what we'll do in a bit, we'll pair the
 
 Another concept that's important to the functioning of koko is "network namespaces". [Linux namespaces](https://en.wikipedia.org/wiki/Linux_namespaces) is the general concept here that allows network namespaces -- in short they give us a view of resources that are limited to a "namespace". Linux namespaces are a fundamental part of how containers function under Linux, it provides the over-arching functionality that's necessary to segregate processes and users, etc. This isn't new either -- apparently it begun in 2002 with mount-type namespaces.
 
-With network namespaces, in Linux all of your interfaces and routing tables are all mashed together and available to one another. With network namespaces, you can isolate these from one another, so they can work independently from one-another. This will give processes a specific view of these interfaces. 
+Without network namespaces, in Linux all of your interfaces and routing tables are all mashed together and available to one another. With network namespaces, you can isolate these from one another, so they can work independently from one-another. This will give processes a specific view of these interfaces. 
 
 ## Let's look at the koko go code.
 

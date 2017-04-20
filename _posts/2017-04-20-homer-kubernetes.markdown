@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-04-05 12:05:08-05:00
+date: 2017-04-20 16:20:00-05:00
 layout: post
 slug: homer-kubernetes
 title: Let's run Homer on Kubernetes!

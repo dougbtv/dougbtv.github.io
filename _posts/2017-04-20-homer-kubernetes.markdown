@@ -14,6 +14,8 @@ Do you just want to play? You can skip down to the "requirements" section and pu
 
 ## Some background
 
+First off, I really enjoy working upstream with the [sipcapture](https://github.com/sipcapture) crew -- they're really nice, and have created quite a fine community around the world of software that comprises Homer. They're really a friendly bunch, and they're always looking to make Homer better -- I'm a regular contributor, and you'll see I proudly contribute as evidenced by my badge showing [membership of the sipcapture org on my github profile](https://github.com/dougbtv)!
+
 This hasn't yet landed in the official upstream homer-docker repo yet. It will eventually, maybe even by the time you're reading this. So, look for a `./k8s` directory in the official [homer-docker](https://github.com/sipcapture/homer-docker) repository. There's a couple things I need to change in order to get it in there -- in part I need to get a build pipeline to get the images into a registry. Because, a registry is required, and frankly it's easy to "just use dockerhub". If you've got a registry -- use your own! You can trust it. Later on in the article, I'll encourage you to use your own registry or dockerhub images if you please, but, also give you the option of using the images I have already built -- so you can just get it to work.
 
 I also need to document it -- that's partially why I'm writing this article, cause I can generate some good docs for the repo proper! And there's at least a few rough edges to sand off (secret management, usage of cron jobs).

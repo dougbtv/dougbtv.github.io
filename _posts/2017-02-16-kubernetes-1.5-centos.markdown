@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-02-16 15:00:03-05:00
+date: 2017-02-16 15:00:04-05:00
 layout: post
 slug: kubernetes-1.5-centos
 title: Let's spin up k8s 1.5 on CentOS (with CNI pod networking, too!)
@@ -253,7 +253,7 @@ And we can describe that service should we want more details...
 Now, we can access the load balanced nginx pods from the virt-host (or your client machine should you have brought your own inventory)
 
 ```
-[root@virthost ~]# curl -s 192.168.122.11:8999 | grep -i thank
+[root@virthost ~]# curl -s $master_ip:8999 | grep -i thank
 <p><em>Thank you for using nginx.</em></p>
 ```
 

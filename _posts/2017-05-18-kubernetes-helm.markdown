@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-18 16:30:04-05:00
+date: 2017-05-18 16:30:03-07:00
 layout: post
 slug: kubernetes-helm
 title: Sailing the 7 seas with Kubernetes Helm
@@ -195,7 +195,32 @@ And you can wrap it all up with `helm package`, which will make a tarball for yo
 -rw-rw-r--. 1 centos centos 2.2K May 18 17:54 pickle-chart-0.1.0.tgz
 ```
 
+### Let's edit the charts to make them our own
 
+Change your directory into the newly created `./pickle-chart` dir. First let's look at `Chart.yaml` in this directory -- this is a bunch of meta data for our chart. I edited mine to look like:
+
+```
+apiVersion: v1
+description: An nginx instance that serves a pickle photo
+name: pickle-chart
+version: 0.0.1
+```
+
+Now, move into the `./templates/` directory and you're going to see a few things here -- yaml files, but, they're templates. And they're templated as [sprig templates](https://github.com/Masterminds/sprig). 
+
+If you've created pod specs before, these won't seem too too weird, at least in name. Especially `deployment.yaml` and `service.yaml`. As you could imagine, these define a deployment, and a service. Feel free to surf around these and 
+
+Let's modify the `values.yaml` -- this is where the values of the majority of the parameters for the template come from. 
+
+Including the docker image that we're going to use, which is `dougbtv/pickle-nginx` -- should you care to build the image yourself, I [posted the dockerfile and context as a gist](https://gist.github.com/dougbtv/29683885550d562359674b3b6817fbfc).
+
+We're going to leave the majority of `values.yaml` as the default. I change the `image` section and also added the `pickletype`.
+
+[IMPORTANT: Github page didn't like the embedded templates here in the markdown for my blog, it would fail building them. So you'll have to pick up these two files from this gist.](https://gist.github.com/dougbtv/ea3c442d03b6f068da6dfce4156a1dd1). Copy out both the `values.yaml` and `deployment.yaml`. And use them here.
+
+Now, modify the `./templates/deployment.yaml`. Again, most of it is default, but, you'll see that I added an `env` section. This is used by the image to do something, more than "just statically deploy" -- we'll get to that in a moment.
+
+Cool, that's all set for now.
 
 ## Let's run our brand spankin' new Helm charts!
 

@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-18 16:30:03-05:00
+date: 2017-05-18 16:30:04-05:00
 layout: post
 slug: kubernetes-helm
 title: Sailing the 7 seas with Kubernetes Helm
@@ -195,102 +195,84 @@ And you can wrap it all up with `helm package`, which will make a tarball for yo
 -rw-rw-r--. 1 centos centos 2.2K May 18 17:54 pickle-chart-0.1.0.tgz
 ```
 
-### Let's edit the charts to make them our own
 
-Change your directory into the newly created `./pickle-chart` dir. First let's look at `Chart.yaml` in this directory -- this is a bunch of meta data for our chart. I edited mine to look like:
 
-```
-apiVersion: v1
-description: An nginx instance that serves a pickle photo
-name: pickle-chart
-version: 0.0.1
-```
+## Let's run our brand spankin' new Helm charts!
 
-Now, move into the `./templates/` directory and you're going to see a few things here -- yaml files, but, they're templates. And they're templated as [sprig templates](https://github.com/Masterminds/sprig). 
+Alright, so, now make sure you're up a directory from the `./pickle-chart` directory, and let's fire it off.
 
-If you've created pod specs before, these won't seem too too weird, at least in name. Especially `deployment.yaml` and `service.yaml`. As you could imagine, these define a deployment, and a service. Feel free to surf around these and 
+Install the chart like so:
 
-Let's modify the `values.yaml` -- this is where the values of the majority of the parameters for the template come from. 
+    [centos@kube-master ~]$ helm install ./pickle-chart
 
-Including the docker image that we're going to use, which is `dougbtv/pickle-nginx` -- should you care to build the image yourself, I [posted the dockerfile and context as a gist](https://gist.github.com/dougbtv/29683885550d562359674b3b6817fbfc).
+Now, wait until it's fully deployed, I do this by watching like this:
 
-We're going to leave the majority of `values.yaml` as the default. I change the `image` section and also added the `pickletype`
+    [centos@kube-master ~]$ watch -n1 kubectl get pods --show-all
 
-```
-# Default values for pickle-chart.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-replicaCount: 1
-pickletype: pickle
-image:
-  repository: dougbtv/pickle-nginx
-  tag: latest
-  pullPolicy: IfNotPresent
-service:
-  name: pickle-nginx
-  type: ClusterIP
-  externalPort: 80
-  internalPort: 80
-ingress:
-  enabled: false
-  # Used to create Ingress record (should used with service.type: ClusterIP).
-  hosts:
-    - chart-example.local
-  annotations:
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  tls:
-    # Secrets must be manually created in the namespace.
-    # - secretName: chart-example-tls
-    #   hosts:
-    #     - chart-example.local
-resources:
-  limits:
-    cpu: 100m
-    memory: 128Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
-```
+And wait until it's showing as running.
 
-Now, modify the `./templates/deployment.yaml`. Again, most of it is default, but, you'll see that I added an `env` section. This is used by the image to do something, more than "just statically deploy" -- we'll get to that in a moment.
+Now -- it creates a service for us, so let's check out what that service is with `kubectl get svc`.
 
-Here's the contents of `./templates/deployment.yaml`
+Here's the IP it's listening on:
 
 ```
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: {{ template "fullname" . }}
-  labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
-spec:
-  replicas: {{ .Values.replicaCount }}
-  template:
-    metadata:
-      labels:
-        app: {{ template "fullname" . }}
-    spec:
-      containers:
-      - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        env:
-        - name: PICKLE_TYPE
-          value: {{ .Values.pickletype }}
-        ports:
-        - containerPort: {{ .Values.service.internalPort }}
-        livenessProbe:
-          httpGet:
-            path: /
-            port: {{ .Values.service.internalPort }}
-        readinessProbe:
-          httpGet:
-            path: /
-            port: {{ .Values.service.internalPort }}
-        resources:
-{{ toYaml .Values.resources | indent 10 }}
+[centos@kube-master ~]$ kubectl get svc | grep -i pickle | awk '{print $2}'
 ```
 
-Cool, that's all set for now.
+We'll save that as a variable and curl it.
 
+```
+[centos@kube-master ~]$ pickle_ip=$(kubectl get svc | grep -i pickle | awk '{print $2}')
+[centos@kube-master ~]$ curl -s $pickle_ip | grep -i img
+    <img src="pickle.png" />
+```
+
+Great, now note that the img src is `pickle.png`. This -- we have made configurable, so let's deploy our chart differently.
+
+First I'll go and delete the release. So list the charts and delete, a la:
+
+```
+[centos@kube-master ~]$ helm list
+NAME                REVISION  UPDATED                   STATUS    CHART               NAMESPACE
+interesting-buffalo 1         Thu May 18 19:51:51 2017  DEPLOYED  pickle-chart-0.0.1  default  
+[centos@kube-master ~]$ helm delete interesting-buffalo
+release "interesting-buffalo" deleted
+```
+
+Now -- we're going to run this differently by changing a default value in our template.
+
+```
+[centos@kube-master ~]$ helm install --set pickletype=pickle-man ./pickle-chart
+```
+
+This sets the `pickletype` which will change something our application.
+
+Now, go ahead and pick up the IP from the service again, and we'll curl it...
+
+```
+[centos@kube-master ~]$ pickle_ip=$(kubectl get svc | grep -i pickle | awk '{print $2}')
+[centos@kube-master ~]$ curl -s $pickle_ip | grep -i img
+    <img src="pickle-man.png" />
+```
+
+We can now see that we're serving a different photo -- this time a pickle cartoon that is a "pickle man" as opposed to... Just a pickle.
+
+Oh yeah -- and you can deploy from a tarball...
+
+```
+[centos@kube-master ~]$ rm pickle-chart-0.1.0.tgz 
+[centos@kube-master ~]$ helm package pickle-chart/
+[centos@kube-master ~]$ helm install pickle-chart-0.0.1.tgz 
+```
+
+Or you can install from an absolute URL containing the tarball, too.
+
+And there you have it -- you've gone ahead and...
+
+* Installed Helm
+* Installed a sample application (mongodb)
+* Created your own helm chart
+* Deployed a release
+* Change the parameters for the templated values to create a new release with different parameters.
+
+Good luck sailing the 7 seas!

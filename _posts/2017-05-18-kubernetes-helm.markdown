@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-18 16:30:02-05:00
+date: 2017-05-18 16:30:03-05:00
 layout: post
 slug: kubernetes-helm
 title: Sailing the 7 seas with Kubernetes Helm
@@ -294,82 +294,3 @@ spec:
 
 Cool, that's all set for now.
 
-## Let's run our brand spankin' new Helm charts!
-
-Alright, so, now make sure you're up a directory from the `./pickle-chart` directory, and let's fire it off.
-
-Install the chart like so:
-
-    [centos@kube-master ~]$ helm install ./pickle-chart
-
-Now, wait until it's fully deployed, I do this by watching like this:
-
-    [centos@kube-master ~]$ watch -n1 kubectl get pods --show-all
-
-And wait until it's showing as running.
-
-Now -- it creates a service for us, so let's check out what that service is with `kubectl get svc`.
-
-Here's the IP it's listening on:
-
-```
-[centos@kube-master ~]$ kubectl get svc | grep -i pickle | awk '{print $2}'
-```
-
-We'll save that as a variable and curl it.
-
-```
-[centos@kube-master ~]$ pickle_ip=$(kubectl get svc | grep -i pickle | awk '{print $2}')
-[centos@kube-master ~]$ curl -s $pickle_ip | grep -i img
-    <img src="pickle.png" />
-```
-
-Great, now note that the img src is `pickle.png`. This -- we have made configurable, so let's deploy our chart differently.
-
-First I'll go and delete the release. So list the charts and delete, a la:
-
-```
-[centos@kube-master ~]$ helm list
-NAME                REVISION  UPDATED                   STATUS    CHART               NAMESPACE
-interesting-buffalo 1         Thu May 18 19:51:51 2017  DEPLOYED  pickle-chart-0.0.1  default  
-[centos@kube-master ~]$ helm delete interesting-buffalo
-release "interesting-buffalo" deleted
-```
-
-Now -- we're going to run this differently by changing a default value in our template.
-
-```
-[centos@kube-master ~]$ helm install --set pickletype=pickle-man ./pickle-chart
-```
-
-This sets the `pickletype` which will change something our application.
-
-Now, go ahead and pick up the IP from the service again, and we'll curl it...
-
-```
-[centos@kube-master ~]$ pickle_ip=$(kubectl get svc | grep -i pickle | awk '{print $2}')
-[centos@kube-master ~]$ curl -s $pickle_ip | grep -i img
-    <img src="pickle-man.png" />
-```
-
-We can now see that we're serving a different photo -- this time a pickle cartoon that is a "pickle man" as opposed to... Just a pickle.
-
-Oh yeah -- and you can deploy from a tarball...
-
-```
-[centos@kube-master ~]$ rm pickle-chart-0.1.0.tgz 
-[centos@kube-master ~]$ helm package pickle-chart/
-[centos@kube-master ~]$ helm install pickle-chart-0.0.1.tgz 
-```
-
-Or you can install from an absolute URL containing the tarball, too.
-
-And there you have it -- you've gone ahead and...
-
-* Installed Helm
-* Installed a sample application (mongodb)
-* Created your own helm chart
-* Deployed a release
-* Change the parameters for the templated values to create a new release with different parameters.
-
-Good luck sailing the 7 seas!

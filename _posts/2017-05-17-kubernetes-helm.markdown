@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-17 11:14:00-05:00
+date: 2017-05-17 11:14:01-05:00
 layout: post
 slug: kubernetes-helm
 title: Sailing the 7 seas with Kubernetes Helm

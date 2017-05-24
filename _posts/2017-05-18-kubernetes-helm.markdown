@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-18 16:30:03-07:00
+date: 2017-05-18 16:30:04-07:00
 layout: post
 slug: kubernetes-helm
 title: Sailing the 7 seas with Kubernetes Helm
@@ -59,16 +59,16 @@ It will also take a second to complete, and then timeout and probably complain t
 [centos@kube-master ~]$ helm init
 ```
 
-That should start tiller for us -- so you'll have to watch for it come up, go ahead and `watch -n1 kubectl get pods`
+That should start tiller for us -- so you'll have to watch for it come up, go ahead and `watch -n1 kubectl get pods --all-namespaces`
 
 And we'll have to create an [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) for it, too. I used [this gist](https://gist.github.com/mgoodness/bd887830cd5d483446cc4cd3cb7db09d) as a reference.
 
 ```
-[centos@kube-master ~]$ kubectl -n kube-system create sa tiller
+[centos@kube-master ~]$ kubectl --namespace kube-system create sa tiller
 serviceaccount "tiller" created
 [centos@kube-master ~]$ kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
 clusterrolebinding "tiller" created
-[centos@kube-master ~]$ kubectl -n kube-system patch deploy/tiller-deploy -p '{"spec": {"template": {"spec": {"serviceAccountName": "tiller"}}}}'
+[centos@kube-master ~]$ kubectl --namespace kube-system patch deploy/tiller-deploy -p '{"spec": {"template": {"spec": {"serviceAccountName": "tiller"}}}}'
 deployment "tiller-deploy" patched
 ```
 

@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-18 16:30:04-07:00
+date: 2017-05-18 16:30:05-07:00
 layout: post
 slug: kubernetes-helm
 title: Sailing the 7 seas with Kubernetes Helm
@@ -208,7 +208,7 @@ version: 0.0.1
 
 Now, move into the `./templates/` directory and you're going to see a few things here -- yaml files, but, they're templates. And they're templated as [sprig templates](https://github.com/Masterminds/sprig). 
 
-If you've created pod specs before, these won't seem too too weird, at least in name. Especially `deployment.yaml` and `service.yaml`. As you could imagine, these define a deployment, and a service. Feel free to surf around these and 
+If you've created pod specs before, these won't seem too too weird, at least in name. Especially `deployment.yaml` and `service.yaml`. As you could imagine, these define a deployment, and a service. Feel free to surf around these and explore for yourself to get an idea of what you could customize, or better yet, add to.
 
 Let's modify the `values.yaml` -- this is where the values of the majority of the parameters for the template come from. 
 

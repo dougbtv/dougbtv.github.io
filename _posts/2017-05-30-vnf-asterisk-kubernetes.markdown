@@ -4,13 +4,21 @@ comments: true
 date: 2017-05-30 17:02:00-05:00
 layout: post
 slug: vnf-asterisk-kubernetes
-title: Running vnf-asterisk on Kubernetes
+title: VNFs in Kubernetes? Sure thing, here's vnf-asterisk!
 category: nfvpe
 ---
 
+Want to run a virtual network function (VNF) on Kubernetes? You're in luck! This article comprises a small "do it yourself workshop" that I've put together for a talk that I'm giving at [OPNFV Summit](http://events.linuxfoundation.org/events/opnfv-summit) during the [CNCF day co-located event](http://events.linuxfoundation.org/events/opnfv-summit/extend-the-experience/cncf). Today, we're going to use [vnf-asterisk](https://github.com/redhat-nfvpe/vnf-asterisk) which is an open source demo VNF we've created on the [NFVPE devops squad](https://github.com/redhat-nfvpe) to validate various infrastructure deployments and explore other topics such as container networking, scale, HA, and on and on. I've documented it end-to-end as much as possible so participants can go ahead and dissect it to see how I've componentized it, and as well as how you might start to scale it. The requirements are thick, but are based on previous labs on this blog. Ready for (virtual) dialtone in Kube, let's go!
 
+![vnf asterisk logo](https://github.com/dougbtv/vnf-asterisk-controller/raw/master/docs/vnf-asterisk-controller-logo.png)
 
-# Requirements
+I've also submitted a talk, along with Leif Madsen about running this VNF for [Astricon 2017](http://www.asterisk.org/community/astricon-user-conference), so we'll see if it makes it in there too.
+
+The main take-away for folks here should be A. some nice exposure to how you might both take apart the pieces to containerize them, and also how to knit them back together with Kubernetes (and some Kubernetes usage), but also B. To use as a reference, and to decide what you do and do not like about it. It's OK to not like some of it! In fact, I hope it helps you form your own opinions. In fact, while I do have some opinions -- I try to keep them loose as these technologies grow and gain maturity. There's already things here that I would change, and certain things that are done as a stop gap. 
+
+So enough blabbering, let's fire up some terminals and get to the good stuff!
+
+## Requirements
 
 TL;DR:
 
@@ -18,8 +26,9 @@ TL;DR:
 * Persistent storage
 * Git (and your favorite editor) on the master
 * Ansible (if you're using my lab playbooks) on "some convenient machine"
+* Approximately 5 gigs free for docker images
 
-You're going to need a Kubernetes lab environment that has some persistent storage available. Generally my articles also assume a CentOS environment, and while that may not be entirely applicable here, you should know that's where I start from.
+You're going to need a Kubernetes lab environment that has some persistent storage available. Generally my articles also assume a CentOS environment, and while that may not be entirely applicable here, you should know that's where I start from and might color some of the ancillary tools that I employ.
 
 Additionally, you need git (and probably your favorite text editor) on the master node of your cluster.
 
@@ -30,9 +39,26 @@ But if that seems overwhelming? Don't let it be! I've got you covered with these
 
 Naturally, if you have another avenue to achieve the same, then go for it!
 
+## Browsing the components
+
+If you'd like to explore the code behind this (and I highly recommend that you do), there's generally two repositories you want to look at:
+
+* [vnf-asterisk](https://github.com/redhat-nfvpe/vnf-asterisk) proper
+* [vnf-asterisk-controller](https://github.com/dougbtv/vnf-asterisk-controller)
+
+The controller is a full-stack-javascript web app that both exposes an API and also talks to Asterisk's ARI (Asterisk RESTful Interface) in order to specify behaviors during call flow, and to use [sorcery](https://wiki.asterisk.org/wiki/display/AST/Sorcery) which we use to dynamically configure Asterisk. This is intended to make for a kind of clay infrastructure so that we can mold to fit a number of scenarios for which we can use Asterisk. A lot of people hear Asterisk and think "Oh, IP-PBX". Sure, you could use it for that. But, that's not all. It could be an [IVR](https://en.wikipedia.org/wiki/Interactive_voice_response) (psst, IVR is NOT just an auto-attendent), maybe you could use it on your session border as a B2BUA to hide topology, maybe you'll make a feature server, maybe you'll front a cluster of all of the above with it, maybe you'll use it as a class-4 switch instead of the assumption of class-5 switching with a PBX. There's a lot you can do with it! Here what we're trying to achieve is a flexible way to use the components herein. 
+
+While you're surfing around in the vnf-asterisk repository, you might notice that there's also other notes and possibly Ansible playbooks. There's also exploration we've done here with starting with a legacy, automating that legacy, and then breaking apart the pieces.
+
+If you're looking for the Dockerfiles for all the pieces, you're going to want to look in a few places, `vnf-asterisk-controller` but also in the [docker-asterisk](https://github.com/dougbtv/docker-asterisk) repo, and also the [homer-docker](https://github.com/sipcapture/homer-docker) repo.
+
+Last but not least -- this also includes [Homer](https://github.com/sipcapture/homer); a VoIP capture, troubleshooting & monitoring tool, which I enjoy contributing too (and using even more!), and I designed the PoC method by which Homer is deployed in Kubernetes, and have maintained the Dockerfiles / docker-compose methodology for a few years. 
+
+Don't deny Homer here, and take it's lesson for your own deployments -- implement monitoring and logging like you mean it. Homer has saved my bacon a number of times, seriously.
+
 ## Basic setup.
 
-Generally speaking, we'll do this work from the master server. If you have kubectl setup in another place, go ahead and use whatever can access your Kubernetes cluster. 
+Generally speaking, we'll do this work from the Kubernetes master server. If you have `kubectl` setup in another place, go ahead and use whatever can access your Kubernetes cluster. 
 
 Now that you have a kubernetes cluster up with persistent volume storage (also, congrats!) you should first check that you can use kube DNS from the master. My lab playbooks don't currently account for this, so that's going to be the first thing we do. It's worth the effort to make the rest of the steps easier without having to poke around too too much. Necessary evil, but, we're onto the fun stuff in a moment.
 
@@ -76,7 +102,7 @@ nameserver 10.96.0.10
 nameserver 192.168.122.1
 ```
 
-Note: That won't be sticky through reboots. I'll leave that as an excersize for my readers (or someone can make a PR on my playbooks!)
+Note: That won't be sticky through reboots. I'll leave that as an exercise for my readers (or someone can make a PR on my playbooks!)
 
 And just make sure that it works.
 
@@ -114,7 +140,7 @@ We're going to go ahead and create everything given those, so run yourself `kube
 [centos@kube-master templates]$ kubectl create -f podspec.yml.j2 -f homer-podspec.yml.j2 
 ```
 
-Watch everything while it comes up -- it's going to pull A LOT OF IMAGE FILES. So, that could make it take quite a while.
+Watch everything while it comes up -- it's going to pull A LOT OF IMAGE FILES. Around 4 gigs. Yeah, that's less than idea. Some of these just had to be bigger, maybe I can improve that later. It's a pain when pulling from a public registry, but, in a local registry -- it's not so terribly bad. That could make it take quite a while.
 
 I watch it come up with:
 
@@ -124,7 +150,7 @@ I watch it come up with:
 
 ### Trouble shooting that deploy
 
-If everything is coming up `kubectl get pods` with a status of `Running` -- you're good to go!
+If everything is coming up in `kubectl get pods` with a status of `Running` -- you're good to go!
 
 If you've been toying around with the persistent volumes from my lab, and you see pods failing you might need to recreate them, I had to do `kubectl delete -f ~/glusterfs-volumes.yaml` and then `kubectl create -f ~/glusterfs-volumes.yaml`. 
 
@@ -139,7 +165,7 @@ So, what is running? Let's look at my `get pods` output.
 ```
 [centos@kube-master templates]$ kubectl get pods
 NAME                        READY     STATUS    RESTARTS   AGE
-asterisk-2725520970-w5mnj   1/1       Running   0          8m
+asterisk-2725520970-w5mnj   2/2       Running   0          8m
 controller                  1/1       Running   0          8m
 cron-1550262015-x6v8b       1/1       Running   0          8m
 etcd0                       1/1       Running   0          8m
@@ -155,7 +181,16 @@ You'll see there's some interesting things:
 
 * An asterisk instance (one of them)
 * A controller (a REST-ish API that can control asterisk)
-* A vaguely named "webapp" -- which is 
+* A vaguely named "webapp" -- which is homer's web UI
+* A "vnfui" which is the web UI for the vnf-asterisk-controller
+* etcd -- a distributed key/value used for service discovery
+* cron - Cron jobs for Homer (to later become Kubernetes cron-type jobs)
+* MySQL - used for Homer's storage
+* kamailio - a SIP proxy, here used by Homer to look at VoIP traffice
+
+If you do `kubectl get pods --show-all` you'll also see a bootstrap job which prepopulates the data structures used by Homer.
+
+You'll also note the "asterisk" pod is the lone pod with `2/2` ready -- as it has two containers. It has both asterisk proper, and a [captagent](https://github.com/sipcapture/captagent) to capture VoIP traffic, which it sniffs out of the shared network interface in the infra-container for the pod which both containers share.
 
 And the services available:
 
@@ -497,4 +532,12 @@ Now if you hit the call ID in the results there, it should bring up a "ladder di
 Here's what mine looks like:
 
 ![homer ladder diagram](http://i.imgur.com/QtdODHA.png)
+
+## In review...
+
+Hurray! And there.... You have it.
+
+The bottom line is -- a lot of what's here for configuring the service once it's up, especially with regards to interacting with the controller & scaling is rather manual; which is to demonstrate how this approach works and let you touch some parts.
+
+You could however, automate those portions, and use some of Kubernetes autoscaling features to make this a lot more automatic & dynamic. Something to think about as you try this out, or as you design your own.
 

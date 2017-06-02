@@ -1,0 +1,339 @@
+---
+author: dougbtv
+comments: true
+date: 2017-06-02 15:04:00-05:00
+layout: post
+slug: istio
+title: Microservice Mesh? Yes, please. Let's sail with Istio.
+category: nfvpe
+---
+
+Sometimes you wind up patching together your pieces in Kubernetes with a bunch of customized glue, and patching holes with a bunch of putty. It works, and it's fine, but... What if we want to try to standardize those bits and pieces? [Istio](https://istio.io/) is a microservice mesh that can answer a number of those questions for us. Istio is greek for "sailing", and is pronounced "IST-ee-oh" (Thanks to the folks on the [Istio slack](https://istio.slack.com)). Our goal today is to spin up Istio (using Helm) and then we're going to deploy their sample app "bookinfo", but, since we're not in the book industry, we're in the pickling industry -- we're going to then make a custom app to deploy and say "Hello, Istio!" in a pickle-ish fashion my custom "pickle-nginx" application -- ready? [...We can pickle that!](https://www.youtube.com/watch?v=yYey8ntlK_E)
+
+For some general info -- Istio was [just announced may 24th, in blog article by Istio](https://istio.io/blog/istio-service-mesh-for-microservices.html). Kubernetes.io published [this article on istio](http://blog.kubernetes.io/2017/05/managing-microservices-with-istio-service-mesh.html) as well. 
+
+I got a great head start from this [up-and-running video on YouTube](https://www.youtube.com/watch?v=ePwd5bK2Cuo) by [Lachlan Evenson](https://twitter.com/LachlanEvenson). He's using Kube 1.6.4 and that's what we have today using my kube-centos-ansible, which tracks beta / unstable. He's put together [these helm charts](https://github.com/kubernetes/charts/tree/master/incubator/istio) for Istio which are a boon for us, thanks Lachlan!
+
+## Requirements
+
+TL;DR:
+
+* Kubernetes
+* Helm
+
+You'll need Kubernetes, and feel free to [use my labs](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/). Also I also typically assume CentOS container / kube host, so -- while it might not be required, know that it colors what ancillary tools I may use.
+
+We're going to install Istio using Helm charts, so if you need a path to install / use helm (and a helm primer) check out my article [on using Helm](http://dougbtv.com/nfvpe/2017/05/18/kubernetes-helm/). 
+
+Also, the Istio requirements say that we need Kubernetes >= 1.5. And if you're using my labs, they track unstable by default so as of the date of writing, that should be approximately 1.6.4 available on your system.
+
+My also typical also required things are 1. Your favorite text editor, and 2. Git.
+
+## Installing `istioctl`
+
+You're going to need to install `istioctl` -- which is what we use to interact with istio. I've gone ahead and referenced [the docs for the steps here](https://istio.io/docs/tasks/installing-istio.html#installation-steps).
+
+This uses a curl bash script piped to bash, I'm not huuuuge on these (although popular) cause it's asking you to either do some research into what it's doing, or... To blindly trust it. Seeing these are some lab VMs I'm using, I'm going to "sorta trust it" -- feel free to be the skeptic you should be and investigate what it's doing. For now, I'm going to "just use it".
+
+```
+[centos@kube-master ~]$ curl -L https://git.io/getIstio | sh -
+[centos@kube-master ~]$ chmod +x /home/centos/istio-0.1.5/bin
+[centos@kube-master ~]$ sudo cp /home/centos/istio-0.1.5/bin/istioctl /usr/local/bin/
+```
+
+I copy it into `/usr/local/bin` feel free to add the path to the bin to your path, as their docs recommend if that's what you like.
+
+And you can test it out by running it with a `version` parameter like so:
+
+```
+[centos@kube-master ~]$ istioctl version
+```
+
+At the time of writing I had version 0.1.5.
+
+## Clone the helm charts
+
+Go ahead and clone up the charts, and let's take a quick peek. Feel free to dig further to see what's in there.
+
+```
+[centos@kube-master ~]$ git clone --depth 1 https://github.com/kubernetes/charts.git
+[centos@kube-master ~]$ cd charts/incubator/istio/
+[centos@kube-master istio]$ ls
+Chart.yaml  README.md  templates  values.yaml
+```
+
+Now, perform the helm install.
+
+```
+[centos@kube-master istio]$ helm install .
+```
+
+The output will give you a few important bits of information, especially where some of the pieces are running, and the names of the deployments, services, etc.
+
+And of course, watch while it comes up `watch -n1 kubectl get pods`, as it's going to pull a number of images down, so... Grab yourself a coffee. Unless you have gigabit WAN connection to your lab, sorry -- your punishment for being so awesome is that you DON'T get coffee. Actually I have no say, but, since I'm a person who had gigabit before moving somewhere rural, I'm just bitter and jealous.
+
+## Run the sample app
+
+Now that we have it up and running (Damn, Helm made it easy). Let's open up their [docs on the bookinfo sample](https://istio.io/docs/samples/bookinfo.html). 
+
+Note that we've already got a copy of the samples when we installed `istioctl`, so let's move into that directory.
+
+    [centos@kube-master ~]$ cd istio-0.1.5/
+
+Fairly easy to kick it up with:
+
+```
+[centos@kube-master istio-0.1.5]$ kubectl apply -f <(istioctl kube-inject -f samples/apps/bookinfo/bookinfo.yaml)
+```
+
+That's going to be spinning up some pods, so take a look with `watch -n1 kubectl get pods`. Need another coffee already? Yepps, wait until those pods are up.
+
+The `istioctl kube-inject` is, according to their docs, going to modify the bookinfo yaml definition to use Envoy, and is [documented here](https://istio.io/docs/reference/commands/istioctl.html#istioctl-kube-inject). [Envoy](https://lyft.github.io/envoy/) is a L7 proxy. 
+
+This is going to create a bunch of services, go and check those out:
+
+```
+[centos@kube-master istio-0.1.5]$ kubectl get svc
+```
+
+
+### Figuring out where your ingress is.
+
+With that in hand, we can also check out the [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) that has been created. From the docs:
+
+> An Ingress is a collection of rules that allow inbound connections to reach the cluster services
+
+Mine didn't come up with an address. Like so:
+
+```
+[centos@kube-master istio-0.1.5]$ kubectl get ingress -o wide
+NAME      HOSTS     ADDRESS   PORTS     AGE
+gateway   *                   80        21m
+```
+
+According to the Istio bookinfo docs, they say:
+
+> If your deployment environment does not support external load balancers (e.g., minikube), the ADDRESS field will be empty. In this case you can use the service NodePort instead
+
+In addition, if we look at `kubectl get svc` in my case I see the that `EXTERNAL-IP` is pending for the `*-istio-ingress` service. You can describe if you want, too, with:
+
+```
+[centos@kube-master istio]$ kubectl describe svc $(kubectl get svc | grep istio-ingress | awk '{print $1}')
+```
+
+We're going to brew our own way to pick up the NodePort since we have cute names generated by helm. 
+
+Our nodeport:
+
+```
+[centos@kube-master istio]$ nodeport=$(kubectl get svc $(kubectl get svc | grep istio-ingress | awk '{print $1}') -o 'jsonpath={.spec.ports[0].nodePort}')
+[centos@kube-master istio]$ echo $nodeport
+30493
+```
+
+And our pod IP is:
+
+```
+[centos@kube-master istio]$ ingressip=$(kubectl get po -l istio=$(kubectl get deployment | grep istio-ingress | awk '{print $1}') -o 'jsonpath={.items[0].status.hostIP}')
+[centos@kube-master istio]$ echo $ingressip
+192.168.122.33
+```
+
+And let's put that all together as:
+
+```
+[centos@kube-master istio]$ export GATEWAY_URL=$(kubectl get po -l istio=$(kubectl get deployment | grep istio-ingress | awk '{print $1}') -o 'jsonpath={.items[0].status.hostIP}'):$(kubectl get svc $(kubectl get svc | grep istio-ingress | awk '{print $1}') -o 'jsonpath={.spec.ports[0].nodePort}')
+[centos@kube-master istio]$ echo $GATEWAY_URL
+192.168.122.33:30493
+```
+
+Excellent. A bit more steps than if it just had the ingress external IP, which we'll leave to put together for another time, but, this works with the current lab.
+
+To make it interesting, let's use that gateway URL from the virtual machine host, and curl from there.
+
+```
+[root@droctagon2 ~]# export GATEWAY_URL=192.168.122.33:30493
+[root@droctagon2 ~]# curl -o /dev/null -s -w "%{http_code}\n" http://${GATEWAY_URL}/productpage
+200
+```
+
+Hurray, it comes back with a `200 OK`, most excellent! Congrats, you've got your first Istio service up and running.
+
+### Bring it up in a browser.
+
+So I'm going to create a tunnel from my client workstation to my virthost, so I can get traffic to that IP/port. I did so like:
+
+```
+ssh  root@192.168.1.119 -L 8088:192.168.122.33:30493
+```
+
+Where `192.168.1.119` is my virtual machine host, and `192.168.122.33:30493` is the above `GATEWAY_URL`. Then point your browser @ `http://localhost:8088/productpage`
+
+(It'll fail if you go to the root dir, so, yeah, be aware of that one, had me surfing around for a bit.)
+
+## Check out the included visualization tools.
+
+Now, get yourself a few terminals up, one for:
+
+* master
+* virtual machine host
+* local client machine
+
+There was a section in the `helm install` output earlier where we say some info about the Grafana dashboard.
+
+```
+Verifying the Grafana dashboard
+
+  export POD_NAME=$(kubectl get pods --namespace default -l "component=rousing-rat-istio-grafana" -o jsonpath="{.items[0].metadata.name}")
+  kubectl port-forward $POD_NAME 3000:3000
+  echo http://127.0.0.1:3000/dashboard/db/istio-dashboard
+```
+
+Now you can start port-forwarding on the master...
+
+```
+[centos@kube-master istio]$ export POD_NAME=$(kubectl get pods --namespace default -l "component=rousing-rat-istio-grafana" -o jsonpath="{.items[0].metadata.name}")
+[centos@kube-master istio]$ kubectl port-forward $POD_NAME 3000:3000
+```
+
+That will keep running until you `ctrl-c` it.
+
+Start generating some traffic on the virtual machine host to the bookinfo app. We'll generate traffic in a loop.
+
+```
+[root@droctagon2 ~]# export GATEWAY_URL=192.168.122.33:30493
+[root@droctagon2 ~]# while [ true ]; do curl -s -o /dev/null http://${GATEWAY_URL}/productpage; sleep 1; done
+```
+
+Just like before checking the status, but, this time in a loop.
+
+Now, from your client machine, we're going to tunnel and jump host. So we can open up graphana.
+
+```
+[doug@workstation ~]$ ssh -L 3000:localhost:3000 -t root@192.168.1.119 ssh -t -i .ssh/id_vm_rsa -L 3000:localhost:3000 centos@192.168.122.151
+```
+
+Note that `192.168.1.119` is my virtual machine host, and it has keys to acces s the master @ `~/.ssh/id_vm_rsa` and that `192.168.122.151` is my Kubernetes master.
+
+Now... In your browser you should be able to go to `http://localhost:3000` and bring up grafana.
+
+In the upper left, you can check out the "Home" nav item, and there's a "istio dashboard" in there. So bring that up, and... see your requests comin' in!
+
+If you surf through the output from the `helm install`, there's also a "dotviz" dashboard on port 8088 with some cool visualization too. Take the same steps as above put with that pod (pod name looks like istio-servicegraph). You might want to check that out too.
+
+## Clean up book info.
+
+Now, we're done with bookinfo for now, let's clean that bad boy up.
+
+    [centos@kube-master istio-0.1.5]$ samples/apps/bookinfo/cleanup.sh
+
+And check the route rules.
+
+    [centos@kube-master istio-0.1.5]$ istioctl get route-rules
+
+And check out `kubectl get pods` to make sure they're all gone.
+
+## That's great, what about my own service?
+
+So turns out you don't run bookinfo as a business huh? You're more of a pickle connoisseur, and you serve pickle images over the web. Big business. Dill, bread & butter, heck pickled [watermelon rinds](http://www.food.com/recipe/watermelon-rind-pickles-39027). So, let's run our own service instead.
+
+There's some information in the [istio.io doc onintegrating services into the mesh](https://istio.io/docs/tasks/integrating-services-into-istio.html) which you can follow, and I have my own example brewed up here.
+
+So let's create our pickle SaaS resource definitions, a `pickle.yaml` if you will, based on the ones I used in my Helm article:
+
+```
+[centos@kube-master ~]$ cat pickle.yaml 
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: pickle-nginx
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        service: pickle-nginx
+    spec:
+      containers:
+      - name: pickle-nginx
+        image: dougbtv/pickle-nginx
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PICKLE_TYPE
+          value: pickle
+        ports:
+        - containerPort: 80
+        # livenessProbe:
+        #   httpGet:
+        #    path: /
+        #    port: 80
+        # readinessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pickle-nginx
+  labels:
+    service: pickle-nginx
+spec:
+  ports:
+  - port: 9080
+    name: "http-9080"
+    targetPort: 80
+  selector:
+    service: pickle-nginx
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gateway
+  annotations:
+    kubernetes.io/ingress.class: "istio"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        backend:
+          serviceName: pickle-nginx
+          servicePort: 9080
+```
+
+Now, we can use the same method as we used for deploying bookinfo. Note: I was missing an important little piece about having my ports name as `http-9080` -- I had it named `"9080"` and that didn't work. 
+
+Let's go ahead and run the same against pickle.yaml.
+
+```
+[centos@kube-master ~]$ kubectl apply -f <(istioctl kube-inject -f pickle.yaml)
+deployment "pickle-nginx" created
+service "pickle-nginx" created
+ingress "gateway" created
+```
+
+And `watch -n1 kubectl get pods` until we have 2/2 ready on the `pickle-nginx-*` pod.
+
+Now, we use the same method as above to figure out where the ingress IP:Port is and we'll curl the index from our virt host.
+
+```
+[root@droctagon2 ~]# export GATEWAY_URL=192.168.122.33:30493
+[root@droctagon2 ~]# curl -s $GATEWAY_URL | grep img
+    <img src="pickle.png" />
+```
+
+Voila! We're in the pickle business, now.
+
+Great, that being said, we should in theory be able to see our traffic on Grafana now, too. So you can follow the same above steps for putting that curl in a while loop, and bringing up grafana.
+
+And since you.... well aren't actually in the pickle industry (and if you are, I hope you make billions on this application, give me a ride on your yacht when you do) -- you might want to clean this up.
+
+```
+[centos@kube-master ~]$ kubectl delete -f <(istioctl kube-inject -f pickle.yaml)
+```
+
+## So what's next?
+
+We're going to... In the next article in the series... Do a canary release using these tools! Cross your fingers and get ready. Coming soon.

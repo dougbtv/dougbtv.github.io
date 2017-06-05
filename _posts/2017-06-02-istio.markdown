@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-06-02 15:04:00-05:00
+date: 2017-06-02 15:04:01-05:00
 layout: post
 slug: istio
 title: Microservice Mesh? Yes, please. Let's sail with Istio.
@@ -50,6 +50,12 @@ And you can test it out by running it with a `version` parameter like so:
 ```
 
 At the time of writing I had version 0.1.5.
+
+NOTE: You might have some trouble using extended functionality of `istioctl` without a little jury-rigging. This is not required for this tutorial, but, for further use it may be applicable for you. You'll need to specify the `--managerAPIService` using the name of the service as in `kubectl get svc`, it will look approximately like:
+
+```
+[centos@kube-master ~]$ istioctl --managerAPIService=zooming-jaguar-istio-manager:8081 get route-rules -o yaml
+```
 
 ## Clone the helm charts
 

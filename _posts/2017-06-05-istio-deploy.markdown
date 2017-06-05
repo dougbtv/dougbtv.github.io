@@ -1,10 +1,10 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-06-05 15:15:00-05:00
+date: 2017-06-05 15:15:01-05:00
 layout: post
 slug: istio
-title: An Istio Blue-Green Deploy: Anthropomorphized ASCII Hotdogs included.
+title: An Istio Blue-Green Deploy -- Anthropomorphized ASCII Hotdogs included.
 category: nfvpe
 ---
 

@@ -1,10 +1,10 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-07-18 14:00:00-05:00
+date: 2017-07-18 14:00:01-05:00
 layout: post
 slug: openshift-ansible-lab-byo
-title: BYOB: Bring your own boxen to an OpenShift Origin lab!
+title: BYOB - Bring your own boxen to an OpenShift Origin lab!
 category: nfvpe
 ---
 

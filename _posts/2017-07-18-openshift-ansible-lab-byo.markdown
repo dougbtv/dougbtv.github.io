@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-07-18 14:00:02-05:00
+date: 2017-07-18 14:00:03-05:00
 layout: post
 slug: openshift-ansible-lab-byo
 title: BYOB - Bring your own boxen to an OpenShift Origin lab!
@@ -222,7 +222,48 @@ openshift-minion-2.example.local   Ready     52m
 
 You should have 3 nodes, and you might have noticed something in the `./final.inventory` -- I've told OpenShift that it's OK to schedule pods on the master. We're using a lot of resources for this lab, so, might as well make use of the master, too.
 
+## Optional: Configure the Dashboard.
+
 If you want to, set a hosts file on your workstation to point `openshift-master.example.local` at the IP we've been using as the inventory IP address. And then point a browser @ https://openshift-master.example.local:8443/ and accept the certs to kick up the dashboard.
+
+You'll then need to configure the access to the dashboard. You can get a gist of the defaults from the `/etc/origin/master/master-config.yaml` file on the master:
+
+```
+[root@openshift-master centos]# grep -A12 "oauthConfig" /etc/origin/master/master-config.yaml 
+oauthConfig:
+  assetPublicURL: https://openshift-master.example.local:8443/console/
+  grantConfig:
+    method: auto
+  identityProviders:
+  - challenge: true
+    login: true
+    mappingMethod: claim
+    name: htpasswd_auth
+    provider:
+      apiVersion: v1
+      file: /etc/origin/master/htpasswd
+      kind: HTPasswdPasswordIdentityProvider
+```
+
+This lets us know that we're using `htpasswd_auth` and that the htpasswd file is @ `/etc/origin/master/htpasswd`. There's [more info in the official docs](https://docs.openshift.org/latest/install_config/configuring_authentication.html#HTPasswdPasswordIdentityProvider).
+
+With this in hand, we can create a user.
+
+```
+[centos@openshift-master ~]$ oc create user dougbtv
+user "dougbtv" created
+```
+
+And now let's add a password for that user.
+
+```
+[centos@openshift-master ~]$ sudo htpasswd -c /etc/origin/master/htpasswd dougbtv
+New password: 
+Re-type new password: 
+Adding password for user dougbtv
+```
+
+Great, now you should be able to login with the user `dougbtv` (in this example) with the password you set there.
 
 ## Let's kick off a pod.
 

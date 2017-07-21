@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-07-21 11:50:00-05:00
+date: 2017-07-21 11:50:01-05:00
 layout: post
 slug: kube-custom-scheduler
 title: Any time in your schedule? Try using a custom scheduler in Kubernetes
@@ -11,6 +11,16 @@ category: nfvpe
 I've recently been interested in the idea of extending the scheduler in Kubernetes, there's a number of reasons why, but at the top of my list is looking at re-scheduling failed pods based on custom metrics -- specifically for high performance high availablity; like we need in telecom. In my search for learning more about it, I discovered the [Kube docs for configuring multiple schedulers](https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/), and even better -- a practical application, a [toy scheduler](https://github.com/kelseyhightower/scheduler) created by the one-and-only-kube-hero [Kelsey Hightower](https://twitter.com/kelseyhightower). It's about a year old and Hightower is on his game, so he's using alpha functionality at time of authoring. In this article I modernize at least a component to get it to run in the contemporary day. Today our goal is to run through the toy scheduler and have it schedule a pod for us. We'll also dig into Kelsey's go code for the scheduler a little bit to get an intro to what he's doing.
 
 Fire up your terminals, and let's get ready to schedule some pods -- with the NOT the default scheduler.
+
+## What, what's a scheduler? crond?
+
+Well, not crond, but, part of what makes Kubernetes be Kubernetes is its scheduler. A [scheduler, according to Wikipedia](https://en.wikipedia.org/wiki/Scheduling_(computing)), generically speaking is:
+
+> [A] method by which work specified by some means is assigned to resources that complete the work. The work may be virtual computation elements such as threads, processes or data flows, which are in turn scheduled onto hardware resources such as processors, network links or expansion cards
+
+So in this case -- the "work specified by some means" is our containers (usually Docker containers), and the resource they're assigned do -- are our nodes. That's a big thing that Kube does for us -- it assigns our containers to nodes, and makes sure that they're running.
+
+If you want to read more about exactly what the default scheduler in Kubernetes does, [check out this readme file from the kube repos](https://github.com/kubernetes/community/blob/master/contributors/devel/scheduler.md). 
 
 ## Requirements
 

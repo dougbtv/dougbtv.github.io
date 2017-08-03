@@ -1,0 +1,680 @@
+---
+author: dougbtv
+comments: true
+date: 2016-08-03 16:00:00-05:00
+layout: post
+slug: koko-vpp
+title: Connecting containers to VPP with Koko
+category: nfvpe
+---
+
+I've [blogged](http://dougbtv.com/nfvpe/2017/04/05/koko/) about [koko](https://github.com/redhat-nfvpe/koko) in the past -- the container connector. Today we run it and connect to [FD.io](https://fd.io/) VPP ([vector packet processing](https://fd.io/technology/)). We're going to setup vxlan links between containers back to a VPP forwarding host, where we'll create cross-connects to forward packets between. As a bonus, we'll also compile [koro](https://github.com/s1061123/koro), an auxillary utility to use with koko for "container routing", which we'll using in a following companion article. Fire up your terminals, we're going to put our hands right on it and have it all up and running.
+
+Also -- If you haven't been paying attention, Tomo has been putting some awesome work into Koko. He's working [getting it packaged into an RPM](https://bugzilla.redhat.com/show_bug.cgi?id=1463492), he has significantly improved it by breaking out the go code so you can [use it as a library](https://github.com/redhat-nfvpe/koko/pull/16) and not just at the command line, and even beautified the syntax for the arguments! ...Among other great stuff. Great work, Tomo. Next time we can RPM install it instead of building it ourself (it's not hard, but, so handy to have the packages, I can't wait.)
+
+Since we'll be into the guts of it here, it's almost free to compile koro while we're at it. I'm excited to put my hands on koro, and we'll cover it in the next article (spoiler alert: it's got service chains in containers using koko and koro!). I'll refer to the build for koro here for those looking for it.
+
+## What are we building?
+
+Here's a diagram showing the layout of what we're going to build today:
+
+![koko vpp scenario](http://i.imgur.com/Q5dwu8W.png)
+
+The gist we'll build three boxes (I used VMs), and we'll install VPP on one, and the two other hosts are container hosts where we run containers that we'll modify using koko.
+
+## Some limitations
+
+
+
+## Boxen setup & requirements.
+
+I used 3 boxes... 4 vcpus, 2048 megs of ram each. 
+
+* koko1 - 192.168.1.165
+* koko2 - 192.168.1.143
+* vpp1 - 192.168.1.179
+
+## VPP setup
+
+```
+[root@vpp1 centos]# yum install -y git
+[root@vpp1 centos]# git clone https://gerrit.fd.io/r/vpp
+[root@vpp1 centos]# cd vpp/
+```
+
+```
+[root@vpp1 centos]# yes | make install-dep
+[root@vpp1 vpp]# make bootstrap
+[root@vpp1 vpp]# make build
+[root@vpp1 vpp]# make run
+
+```
+
+oops...
+
+```
+dpdk_config: not enough free huge pages
+```
+
+Getting a few hints from [this fd.io jira issue](https://jira.fd.io/browse/VPP-474)
+
+```
+[root@vpp1 vpp]# cat /proc/meminfo | grep Huge
+AnonHugePages:      6144 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+```
+
+Trying... 
+
+```
+[root@vpp1 vpp]# cp /home/centos/vpp/src/vpp/conf/80-vpp.conf /usr/lib/sysctl.d/
+```
+
+and reboot. Box not responding on the network? Doesn't completely boot after 8 minutes or so.
+
+New box with 4 gig ram.... Trying this:
+
+```
+[root@vpp1 centos]# cat /proc/meminfo | grep Huge
+AnonHugePages:     10240 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+[root@vpp1 centos]# sysctl -w vm.nr_hugepages=1024
+vm.nr_hugepages = 1024
+[root@vpp1 centos]# cat /proc/meminfo | grep Huge
+AnonHugePages:     10240 kB
+HugePages_Total:    1024
+HugePages_Free:     1024
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+```
+
+That didn't live through a reboot, so...
+
+```
+[root@vpp1 centos]# echo 'vm.nr_hugepages = 1024' >> /etc/sysctl.conf
+[root@vpp1 centos]# cat /proc/meminfo | grep Huge
+AnonHugePages:      4096 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+[root@vpp1 centos]# sysctl -p
+vm.nr_hugepages = 1024
+[root@vpp1 centos]# cat /proc/meminfo | grep Huge
+AnonHugePages:      4096 kB
+HugePages_Total:    1024
+HugePages_Free:     1024
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+```
+
+That apparently worked, and `make run` came up.
+
+## Getting `eth0` to show up
+
+So, I didn't see `eth0` in the `show interface` command. So... it seems to be complaining:
+
+```
+vlib_pci_bind_to_uio: Skipping PCI device 0000:00:03.0 as host interface eth0 is up
+```
+
+That having been done, I assigned root a password (e.g. `sudo su root` and then `passwd`) then logged into the box with `virsh console vpp1` and did a `ifdown eth0`, then ran `make run`.
+
+Interface is down in vpp, but, it shows up there.
+
+```
+DBGvpp# show interface
+              Name               Idx       State          Counter          Count     
+GigabitEthernet0/3/0              1        down      
+local0                            0        down      
+DBGvpp# show int GigabitEthernet0/3/0
+              Name               Idx       State          Counter          Count     
+GigabitEthernet0/3/0              1        down      
+```
+
+And I set the interface up.
+
+```
+DBGvpp# set interface state GigabitEthernet0/3/0 up
+DBGvpp# show interface
+              Name               Idx       State          Counter          Count     
+GigabitEthernet0/3/0              1         up       rx packets                  1068
+                                                     rx bytes                  118126
+                                                     drops                        280
+                                                     punts                        788
+                                                     ip4                          132
+local0                            0        down      
+```
+
+Now, I can assign it a static address...
+
+```
+DBGvpp# set interface state GigabitEthernet0/3/0 down
+DBGvpp# set int ip address GigabitEthernet0/3/0 192.168.1.223/24
+DBGvpp# set int state GigabitEthernet0/3/0 up
+DBGvpp# ping 192.168.1.1 
+[...snip...]
+```
+
+## Compiling koko
+
+Install up git.
+
+```
+[root@koko1 centos]# yum install -y git
+```
+
+We need go version 1.7 or greater for koko. We'll use repos from [go-repo.io](http://go-repo.io/) -- which at the time of writing installs Go 1.8.3.
+
+```
+[root@koko1 doug]# rpm --import https://mirror.go-repo.io/centos/RPM-GPG-KEY-GO-REPO
+[root@koko1 doug]# curl -s https://mirror.go-repo.io/centos/go-repo.repo | tee /etc/yum.repos.d/go-repo.repo
+[root@koko1 doug]# yum install -y golang
+[root@koko1 doug]# go version
+go version go1.8.3 linux/amd64
+```
+
+Make a go path.
+
+```
+[root@koko1 centos]# mkdir -p /home/centos/gocode/{bin,pkg,src}
+[root@koko1 centos]# export GOPATH=/home/centos/gocode/
+```
+
+Clone koko.
+
+```
+[root@koko1 centos]# git clone https://github.com/redhat-nfvpe/koko.git $GOPATH/src/koko
+```
+
+Get the koko deps, and then build it.
+
+```
+[root@koko1 centos]# go get koko
+[root@koko1 centos]# go build koko
+[root@koko1 centos]# ls $GOPATH/bin
+koko
+```
+
+That results in a `koko` binary in the `$GOPATH/bin`. So you can get some help out of it if you need.
+
+```
+[root@koko1 centos]# $GOPATH/bin/koko --help
+
+Usage:
+./koko -d centos1,link1,192.168.1.1/24 -d centos2,link2,192.168.1.2/24 #with IP addr
+./koko -d centos1,link1 -d centos2,link2  #without IP addr
+./koko -d centos1,link1 -c link2
+./koko -n /var/run/netns/test1,link1,192.168.1.1/24 <other>
+
+    See https://github.com/redhat-nfvpe/koko/wiki/Examples for the detail.
+```
+
+## Compiling koro
+
+Alright, so assuming you've got koko installed, you're most of the way there, using the same installed applications and set `$GOPATH`, you can now clone it up.
+
+```
+[root@koko1 centos]# git clone https://github.com/s1061123/koro.git $GOPATH/src/koro
+```
+
+Get the deps, build it, and run the help.
+
+```
+[root@koko1 centos]# go get koro
+[root@koko1 centos]# go build koro
+[root@koko1 centos]# $GOPATH/bin/koro
+```
+
+Easy street.
+
+## Install a compatible Docker.
+
+You're going to need an up-to-date docker. 
+
+```
+[root@koko1 centos]# yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+[root@koko1 centos]# yum install -y docker-ce
+[root@koko1 centos]# systemctl enable docker
+[root@koko1 centos]# systemctl start docker
+[root@koko1 centos]# docker version | grep -A1 Server | grep Version
+ Version:      17.06.0-ce
+```
+
+Alright, that's great.
+
+## Wash, rinse, repeat.
+
+Now go ahead, and compile koko and koro and install Docker on the second koko host.
+
+## Fire up a few containers.
+
+Alright, let's start some containers. First, we'll pull my handy utility image (it's just `centos:centos7` but has a few handy packages installed, like... `iproute`).
+
+```
+[root@koko1 centos]# docker pull dougbtv/centos-network
+```
+
+Do that on both koko1 and koko2, and now we can run that rascal.
+
+```
+[root@koko1 centos]# docker run --name test1 --net=none -dt dougbtv/centos-network sleep 2000000
+```
+
+```
+[root@koko2 centos]# docker run --name test2 --net=none -dt dougbtv/centos-network sleep 2000000
+```
+
+Alright, let's connect those to a vxlan interface using koko, on the first koko host.
+
+```
+[root@koko1 centos]# /home/centos/gocode/bin/koko -d test1,link1,10.0.1.1/24 -x eth0,192.168.1.223,11
+Create vxlan link1
+```
+
+And on koko2 host.
+
+```
+[root@koko2 centos]# /home/centos/gocode/bin/koko -d test2,link2,10.0.1.2/24 -x eth0,192.168.1.223,12
+Create vxlan link2
+```
+
+Let's dissect the parameters we've used here.
+
+Looking at:
+
+```
+/home/centos/gocode/bin/koko -d test1,link1,10.0.1.1/24 -x eth0,192.168.1.223,11
+```
+
+* `/home/centos/gocode/bin/koko` is the path to the compiled koko binary.
+* `-d` is for the Docker arguments ("Docker == d")
+    - `test1` is the name of the container
+    - `link1` is the name of the interface we'll create in the container
+    - `10.0.1.1/24` is the IP address we'll assign to `link1`
+* `-x` is for the vxlan argument ("v X lan = x")
+    - `eth0` is the parent interface that exists on the host.
+    - `192.168.1.223` is the address of the VPP host.
+    - `11` is the vxlan ID.
+
+Ok cool, let's enter a container and see what's been done. We can see that there's a `link1` interface created...
+
+```
+[root@koko1 centos]# docker exec -it test1 ip a
+```
+
+And we can see that it's a vxlan interface
+
+```
+[root@koko1 centos]# docker exec -it test1 ip -d link show
+[... snip ...]
+    vxlan id 11 remote 192.168.1.223 dev 2 srcport 0 0 dstport 4789 l2miss l3miss ageing 300 addrgenmode eui64 
+```
+
+Great. Now, we'll have to set this up in VPP.
+
+So, go back to your VPP console. We're going to create vxlan tunnels, and keep your [cli docs for vxlan tunnels](https://docs.fd.io/vpp/17.04/clicmd_src_vnet_vxlan.html) handy. 
+
+For your reference again, note that:
+
+* `192.168.1.223` is the vpp host itself.
+* `192.168.1.165` is koko1, and `192.168.1.143` is koko2.
+
+```
+DBGvpp# create vxlan tunnel src 192.168.1.223 dst 192.168.1.165 vni 11
+DBGvpp# create vxlan tunnel src 192.168.1.223 dst 192.168.1.143 vni 12
+```
+
+(If you need to, you can delete those by issuing the same create command and then putting `del` on the end.)
+
+And you can see what we created...
+
+```
+DBGvpp# show interface
+DBGvpp# show interface vxlan_tunnel0
+DBGvpp# show interface vxlan_tunnel1
+```
+
+And that's all well and good, but, it's not perfect until we setup the cross connect.
+
+```
+DBGvpp# set interface l2 xconnect vxlan_tunnel0 vxlan_tunnel1
+DBGvpp# set interface l2 xconnect vxlan_tunnel1 vxlan_tunnel0
+```
+
+Ok, now... Let's exec a ping in the `test1` container we created and applied koko to.
+
+```
+[root@koko1 centos]# docker exec -it test1 ping -c 5 10.0.1.2
+```
+
+Should be good to go!
+
+## Service chaining
+
+Next we're going to do some "service chaining". It's not exactly "service function chaining" (SFC) -- we can let [sdxcentral define that for you](https://www.sdxcentral.com/sdn/network-virtualization/definitions/what-is-network-service-chaining/). From what I understand is that pure SFC uses a "network service header" ([which you can see here from IETF](https://datatracker.ietf.org/doc/draft-ietf-sfc-nsh/)) to help perform dynamic routing. This doesn't use those headers, so I will refer to it as simply "service chaining". In fact... We're going to perform a series of steps here that are quite manual, but, to demonstrate what you may be able to automate in the future -- and my associate Tomofumi has some machinations in the works to do such things. We'll cover those later.
+
+Now that we've establashed we're going to chain some services together -- let's go ahead and actually chain 'em up!
+
+
+## ntopng notes
+
+I've created an [ntopng](http://www.ntop.org/products/traffic-analysis/ntop/) community container image, available from [this Dockerfile in a gist](https://gist.github.com/dougbtv/52ef2c92e87c3398a8752cf0ebc6419e).
+
+```
+$ docker run -dt -p 3000:3000 --privileged --name=ntop --entrypoint=/bin/bash dougbtv/ntopng
+$ docker run --name test1 --net=none -dt dougbtv/centos-network sleep 2000000
+$ docker run --name test2 --net=none -dt dougbtv/centos-network sleep 2000000
+$ ./gocode/bin/koko -d test1,link1,10.0.1.1/24 -d ntop,link2,10.0.1.2/24
+$ ./gocode/bin/koko -d ntop,link3,10.0.2.1/24 -d test2,link4,10.0.2.2/24
+```
+
+That was... a failboat. The [bridge feature](http://www.ntop.org/ndpi/how-to-enforce-layer-7-traffic-policies-using-ntopng/) that I wanted to use is not a community feature.
+
+Falling back to "just a firewall"
+
+## iptables notes.
+
+```
+$ docker pull vimagick/iptables
+$ docker run --name=iptables -dt --privileged -e 'TCP_PORTS=80,443' -e 'UDP_PORTS=53' -e 'RATE=4mbit' -e 'BURST=4kb' vimagick/iptables:latest
+$ docker run --name test1 --privileged --net=none -dt dougbtv/centos-network sleep 2000000
+$ docker run --name test2 --privileged --net=none -dt dougbtv/centos-network sleep 2000000
+$ ./gocode/bin/koko -d test1,link1,10.0.1.1/24 -d iptables,link2,10.0.1.2/24
+$ ./gocode/bin/koko -d iptables,link3,10.0.2.1/24 -d test2,link4,10.0.2.2/24
+```
+
+Then, you need default routes on both `test1` and `test2`, like:
+
+```
+[root@0f821a241d24 /]# ip route add default via 10.0.1.2 dev link1
+```
+
+And the iptables container needs to have ip forwarding...
+
+```
+[root@koko1 centos]# docker exec -it iptables /bin/sh
+/ # echo 1 > /proc/sys/net/ipv4/ip_forward
+```
+
+Then you should be able to ping `10.0.2.2` from `test1`.
+
+Now let's block icmp, to make sure iptables is working, needs to go into the `FORWARD` table.
+
+```
+/ # iptables -A FORWARD -p icmp  -j DROP
+```
+
+And you can remove that too...
+
+```
+/ # iptables delete -j FORWARD 1
+```
+
+## Service chain with koro
+
+Now let's do the same thing but with koro.
+
+```
+$ docker run --name=iptables -dt --privileged -e 'TCP_PORTS=80,443' -e 'UDP_PORTS=53' -e 'RATE=4mbit' -e 'BURST=4kb' vimagick/iptables:latest
+$ docker run --name test1 --privileged --net=none -dt dougbtv/centos-network sleep 2000000
+$ docker run --name test2 --privileged --net=none -dt dougbtv/centos-network sleep 2000000
+$ ./gocode/bin/koko -d test1,link1 -d iptables,link2
+$ ./gocode/bin/koko -d iptables,link3 -d test2,link4
+```
+
+Alright, now, you've gotta still set ip forwarding on the iptables container.
+
+```
+[root@koko1 centos]# docker exec -it iptables /bin/sh
+/ # echo 1 > /proc/sys/net/ipv4/ip_forward
+```
+
+We've got links now, but, no ip addressing. Koro should be able to fix this up for us.
+
+This adds the addresses...
+
+```
+$ ./gocode/bin/koro docker test1 address add 10.0.1.1/24 dev link1
+$ ./gocode/bin/koro docker iptables address add 10.0.1.2/24 dev link2
+$ ./gocode/bin/koro docker iptables address add 10.0.2.1/24 dev link3
+$ ./gocode/bin/koro docker test2 address add 10.0.2.2/24 dev link4
+```
+
+Let's add a default route to test1 & 2.
+
+```
+$ ./koro docker test1 route add default via 10.0.1.2 dev link1
+$ ./koro docker test2 route add default via 10.0.2.1 dev link4
+```
+
+With those in place, we can now ping across the containers.
+
+```
+$ docker exec -it test1 ping -c 5 10.0.2.2
+```
+
+Alright, and now... we'll take those down. (This kills all containers running on your host, btw.)
+
+```
+$ docker kill $(docker ps -aq)
+$ docker rm $(docker ps -aq)
+```
+
+## Setting up a service chain.
+
+So let's go ahead and make a service chain, it'll look like...
+
+```
+functions: client --> firewall --> router --> webserver
+```
+
+So let's spin up all the pieces that we need.
+
+Pull my `dougbtv/pickle-nginx`, we'll use that.
+
+```
+$ docker pull dougbtv/pickle-nginx
+```
+
+Now, let's run all the containers.
+
+```
+$ docker run --name client --privileged --net=none -dt dougbtv/centos-network sleep 2000000
+$ docker run --name=firewall -dt --privileged -e 'TCP_PORTS=80,443' -e 'UDP_PORTS=53' -e 'RATE=4mbit' -e 'BURST=4kb' vimagick/iptables:latest
+$ docker run --name router --privileged --net=none -dt dougbtv/centos-network sleep 2000000
+$ docker run -dt --net=none --name webserver dougbtv/pickle-nginx
+```
+
+And run a `docker ps` to make sure they're all running.
+
+Ok, these need a bit of grooming. Firstly, we need IP forwarding on the firewall and router.
+
+```
+$ docker exec -it firewall /bin/sh -c 'echo 1 > /proc/sys/net/ipv4/ip_forward'
+$ docker exec -it router /bin/sh -c 'echo 1 > /proc/sys/net/ipv4/ip_forward'
+```
+
+Great. Now we can create koko links between all the containers. That's three veth pairs...
+
+```
+$ ./gocode/bin/koko -d client,link1 -d firewall,link2
+$ ./gocode/bin/koko -d firewall,link3 -d router,link4
+$ ./gocode/bin/koko -d router,link5 -d webserver,link6
+```
+
+And now we'll add addresses to them all.
+
+```
+$ ./gocode/bin/koro docker client address add 10.0.1.1/24 dev link1
+$ ./gocode/bin/koro docker firewall address add 10.0.1.2/24 dev link2
+$ ./gocode/bin/koro docker firewall address add 10.0.2.1/24 dev link3
+$ ./gocode/bin/koro docker router address add 10.0.2.2/24 dev link4
+$ ./gocode/bin/koro docker router address add 10.0.3.1/24 dev link5
+$ ./gocode/bin/koro docker webserver address add 10.0.3.2/24 dev link6
+```
+
+And we're going to need some more routing.
+
+```
+[root@koko1 centos]# ./gocode/bin/koro docker client route add default via 10.0.1.2 dev link1
+[root@koko1 centos]# ./gocode/bin/koro docker webserver route add default via 10.0.3.1 dev link6
+[root@koko1 centos]# ./gocode/bin/koro docker firewall route add 10.0.3.0/24 via 10.0.2.2 dev link3
+[root@koko1 centos]# ./gocode/bin/koro docker router route add 10.0.1.0/24 via 10.0.2.1 dev link4
+```
+
+Check all the routing.
+
+```
+[root@koko1 centos]# docker exec -it client ip route
+default via 10.0.1.2 dev link1 
+10.0.1.0/24 dev link1  proto kernel  scope link  src 10.0.1.1 
+
+[root@koko1 centos]# docker exec -it firewall ip route
+default via 172.17.0.1 dev eth0 
+10.0.1.0/24 dev link2 proto kernel scope link src 10.0.1.2 
+10.0.2.0/24 dev link3 proto kernel scope link src 10.0.2.1 
+10.0.3.0/24 via 10.0.2.2 dev link3 
+172.17.0.0/16 dev eth0 proto kernel scope link src 172.17.0.2 
+
+[root@koko1 centos]# docker exec -it router ip route
+10.0.1.0/24 via 10.0.2.1 dev link4 
+10.0.2.0/24 dev link4  proto kernel  scope link  src 10.0.2.2 
+10.0.3.0/24 dev link5  proto kernel  scope link  src 10.0.3.1 
+
+[root@koko1 centos]# docker exec -it webserver ip route
+default via 10.0.3.1 dev link6 
+10.0.3.0/24 dev link6  proto kernel  scope link  src 10.0.3.2 
+```
+
+Now we have a service chain! Huzzah! You can curl the nginx.
+
+```
+[root@koko1 centos]# docker exec -it client /bin/bash -c 'curl -s 10.0.3.2 | grep -i pickle'
+<title>This is pickle-nginx</title>
+```
+
+## Removing an item and fixing the links
+
+Let's cause some [chaos, some mass confusion](https://www.youtube.com/watch?v=qJHEI8fJdiM). It's all well and good we have these four pieces all setup together.
+
+However, the reality is... Something is going to happen. In the real world -- everything is broken. To emulate that let's create this scenario -- the firewall goes down. In a more realistic scenario, this pod will be recreated. For this demonstration we're just going to let it be gone, and we'll just create new links with koko directly to the router, and then re-route
+
+```
+[root@koko1 centos]# docker kill firewall
+```
+
+That should do it. Alright now we can't run our same curl, it fails.
+
+```
+[root@koko1 centos]# docker exec -it client /bin/bash -c 'curl 10.0.3.2'
+curl: (7) Failed to connect to 10.0.3.2: Network is unreachable
+```
+
+We can use koko & koro to fix this up for us. Let's create some new interfaces with koko. We'll also just use a new subnet for this connection (we could finesse the existing, but, this is a couple steps less).
+
+Go ahead and create that veth pair.
+
+```
+$ ./gocode/bin/koko -d client,link7 -d router,link8
+```
+
+Now, we'll need some IP addresses, too.
+
+```
+$ ./gocode/bin/koro docker client address add 10.0.4.1/24 dev link7
+$ ./gocode/bin/koro docker router address add 10.0.4.2/24 dev link8
+```
+
+And we have to fix the client containers default route. We don't have to delete the existing default route because it went down with the interface -- since a veth is a pair. (In a vxlan setup, we'd have to otherwise detect the failure and provide some cleanup), so all we have to do is add a route.
+
+```
+./gocode/bin/koro docker client route add default via 10.0.4.2 dev link7
+```
+
+And -- we're back in business, you can curl the `pickle-nginx` again.
+
+```
+[root@koko1 centos]# docker exec -it client /bin/bash -c 'curl -s 10.0.3.2 | grep -i pickle'
+<title>This is pickle-nginx</title>
+```
+
+## In closing.
+
+Using the basics from this technique for a failed service in a container you could make a number of other operations that would use the same basics, e.g. other failure modes (container that is died is replaced with a new one), or extensions of the service chain, say... Adding a DPI container somewhere in the chain.
+
+The purpose of this is to show the steps manually that could be taken automatically -- by say a CNI plugin for example. That could make these changes automatically and much more quickly than us lowly humans can make them by punching commands in a terminal.
+
+## Tomo's VPP notes
+
+His installation
+
+```
+yum -y install git
+git clone https://gerrit.fd.io/r/vpp
+cd vpp
+make install-dep
+make bootstrap
+make build
+make run
+```
+
+> To recognize interface (e.g. eth0/eth1), you need to modify /etc/vpp/startup.conf as following:
+https://wiki.fd.io/view/VPP/How_To_Connect_A_PCI_Interface_To_VPP
+vpp recognizes virtio interface of qemu, but some interface is not supported yet (due to dpdk), so please take care of baremetal case.
+
+---
+
+creating vpp vxlan tunnels
+
+```
+# Each will output name of the created tunnel
+create vxlan tunnel src 10.1.1.1 dest 10.1.1.11 vni 11
+create vxlan tunnel src 10.1.1.2 dest 10.1.1.12 vni 12
+```
+
+creating koko devices...
+
+```
+# box a
+koko -d test,link1,192.168.1.1/24 -x eth1,10.1.1.1,11
+# box b
+koko -d test,link1,192.168.1.2/24 -x eth1,10.1.1.1,12
+```
+
+Create the vpp cross connections
+
+```
+set interface l2 xconnect vxlan_tunnel0 vxlan_tunnel1
+set interface l2 xconnect vxlan_tunnel1 vxlan_tunnel0
+```
+
+## Tomo's SFC notes
+
+```
+<tohayash> just a info about the term "SFC (service function chaining)". 
+<dougbtv> sure
+<dougbtv> I appreciate any input and assistance there, for sure
+<tohayash> previously Feng said that "SFC" sometimes feels "dynamic routing by service header", so from his definition, our solution is not based SFC.
+<tohayash> If someone thinking "SFC is kind of service chaining", our solution is following their definition.
+<dougbtv> ahhhh ha, it's a more generic example of just "chaining some things together" -- and not "EXACTLY service function chaining"
+<dougbtv> really good to know!!!
+<tohayash> so we may use service chaining or other terms in blog to avoid misunderstanding...
+<tohayash> yeah...
+<dougbtv> thank you :) that's an excellent pointer
+<tohayash> yeah, sometimes SFC means "SFC-NSH" only, so we may need to use other terms for NSH fundamentalist :)
+<tohayash> anyway, just about it. have a good day, doug!
+<dougbtv> Really good call Tomo, the fundamentalists do get picky. Thanks much again! Have a nice night, catch you soon
+```
+

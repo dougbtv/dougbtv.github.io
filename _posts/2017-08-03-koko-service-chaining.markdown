@@ -4,40 +4,63 @@ comments: true
 date: 2016-08-03 17:00:00-05:00
 layout: post
 slug: koko-service-chaining
-title: Service Chaining in Container using Koko & Koro
+title: Chainmail of NFV (+1 Dexterity) -- Service Chaining in Containers using Koko & Koro
 category: nfvpe
 ---
 
-## Service chaining
+In this episode -- we're going to do some "service chaining" in containers, with some work facilitated by [Tomofumi Hayashi](https://github.com/s1061123) in his creation of [koko](https://github.com/redhat-nfvpe/koko) and [koro](https://github.com/s1061123/koro). Koko (the "container connector") gives us the ability to connect a network between containers (with veth, vxlan or vlan interfaces) in an isolated way, and then we can use the functionality of Koro (the "container routing" tool) to manipulate those network interfaces, and specifically their routing in order to chain them together, and then further manipulate routing and ip addressing to facilitate the changing of this chain. Our goal today will be to connect four containers in a chain of services going from a http client, to a firewall, through a router, and terminating at a web server. Once we have that chain together, we'll intentionally cause a failure of a service and then repair it using koro. 
 
-Next we're going to do some "service chaining". It's not exactly "service function chaining" (SFC) -- we can let [sdxcentral define that for you](https://www.sdxcentral.com/sdn/network-virtualization/definitions/what-is-network-service-chaining/). From what I understand is that pure SFC uses a "network service header" ([which you can see here from IETF](https://datatracker.ietf.org/doc/draft-ietf-sfc-nsh/)) to help perform dynamic routing. This doesn't use those headers, so I will refer to it as simply "service chaining". In fact... We're going to perform a series of steps here that are quite manual, but, to demonstrate what you may be able to automate in the future -- and my associate Tomofumi has some machinations in the works to do such things. We'll cover those later.
+(The title joke is... fairly lame. Since when aren't the other one's lame? But! It's supposed to be a reference to [magic items in Dungeons & Dragons](http://www.dandwiki.com/wiki/SRD:Magic_Items))
+
+I'd like to point out that this is not exactly "service function chaining" (SFC) -- we can let [sdxcentral define that for you](https://www.sdxcentral.com/sdn/network-virtualization/definitions/what-is-network-service-chaining/). From what I understand is that pure SFC uses a "network service header" ([which you can see here from IETF](https://datatracker.ietf.org/doc/draft-ietf-sfc-nsh/)) to help perform dynamic routing. This doesn't use those headers, so I will refer to it as simply "service chaining". You can think of it as maybe some related tools and ideas to build on to achieve something more like a proper SFC.
+
+In fact... We're going to perform a series of steps here that are quite manual, but, to demonstrate what you may be able to automate in the future -- and my associate Tomofumi has some machinations in the works to do such things. We'll cover those later.
 
 Now that we've establashed we're going to chain some services together -- let's go ahead and actually chain 'em up!
 
+## What are we building today?
 
-## ntopng notes
+We're going to spin up 4 containers, and chain the services in them. All the network connections are veth created by koko.
 
-I've created an [ntopng](http://www.ntop.org/products/traffic-analysis/ntop/) community container image, available from [this Dockerfile in a gist](https://gist.github.com/dougbtv/52ef2c92e87c3398a8752cf0ebc6419e).
+![service chain overview](blob:http://imgur.com/9bcd8809-0b1a-468c-8feb-a026e6807671)
 
-```
-$ docker run -dt -p 3000:3000 --privileged --name=ntop --entrypoint=/bin/bash dougbtv/ntopng
-$ docker run --name test1 --net=none -dt dougbtv/centos-network sleep 2000000
-$ docker run --name test2 --net=none -dt dougbtv/centos-network sleep 2000000
-$ ./gocode/bin/koko -d test1,link1,10.0.1.1/24 -d ntop,link2,10.0.1.2/24
-$ ./gocode/bin/koko -d ntop,link3,10.0.2.1/24 -d test2,link4,10.0.2.2/24
-```
+Here you can see we'll have 4 services chained together, in essence an HTTP request is made by the client, passes the firewall, gets routed by the router, and then lands at an HTTP server.
 
-That was... a failboat. The [bridge feature](http://www.ntop.org/ndpi/how-to-enforce-layer-7-traffic-policies-using-ntopng/) that I wanted to use is not a community feature.
+The firewall is just iptables, and the router is simply kernel routing and allowing ip forwarding in the container. These are shortcuts to help simplify those services allowing at us to look at the pieces that we use to deploy and manage their networking. I tried to put in an example with DPI, and I realized quickly it was too big of a piece to chew, and that it'd detract from the other core functionality to explore in this article.
 
-Falling back to "just a firewall"
+## Requirements
 
-## iptables notes.
+Note that this article assumes you have setup left-over from [this previous how-to blog showing koko+vpp](http://dougbtv.com/nfvpe/2017/08/03/koko-vpp/). If you're not interested in the VPP part (we don't use it in this article) you can skip those sections, but, you will need koko & koro installed and Docker.
+
+## Limitations and what's next
+
+This setup could be further extended and made cooler by making all vxlan (or maybe even vlan) connections to the containers and backing them with the VPP host we create in the last article. However, it's a further number of steps, and between these articles I beleieve one could make a portmanteau of the two and give that a whirl, too!
+
+Tomo has other cool goodies in the works, and without spoiling, the gist is that they further the automation of what we're doing here. In a more realistic scenario -- that's the real use-case, to have these type of operations very quickly and automatically -- instead of babying them at each step. However, this helps to expose you to the pieces at work for something like that to happen.
+
+## A warm-up using iptables (optional)
+
+Ok, let's have a warm-up quick. We can go through the most basic steps, and we'll operate a firewall. So here we'll create two endpoints with a firewall between them. This part is optional and you can skip down to the next header.
+
+But, I encourage you to run through this quick, it won't take extra time and you can see stepwise how koro is used after, say, not using it.
+
+I'm going to use someone's [dockerhub iptables](https://hub.docker.com/r/vimagick/iptables/), and here's [the Dockerfile](https://github.com/vimagick/dockerfiles) should you need it.
 
 ```
 $ docker pull vimagick/iptables
+```
+
+Now run that image, and two more.
+
+```
 $ docker run --name=iptables -dt --privileged -e 'TCP_PORTS=80,443' -e 'UDP_PORTS=53' -e 'RATE=4mbit' -e 'BURST=4kb' vimagick/iptables:latest
 $ docker run --name test1 --privileged --net=none -dt dougbtv/centos-network sleep 2000000
 $ docker run --name test2 --privileged --net=none -dt dougbtv/centos-network sleep 2000000
+```
+
+We can use koko to connect them together with veth connections.
+
+```
 $ ./gocode/bin/koko -d test1,link1,10.0.1.1/24 -d iptables,link2,10.0.1.2/24
 $ ./gocode/bin/koko -d iptables,link3,10.0.2.1/24 -d test2,link4,10.0.2.2/24
 ```
@@ -45,7 +68,8 @@ $ ./gocode/bin/koko -d iptables,link3,10.0.2.1/24 -d test2,link4,10.0.2.2/24
 Then, you need default routes on both `test1` and `test2`, like:
 
 ```
-[root@0f821a241d24 /]# ip route add default via 10.0.1.2 dev link1
+$ docker exec -it test /bin/bash -c 'ip route add default via 10.0.1.2 dev link1'
+$ docker exec -it test /bin/bash -c 'ip route add default via 10.0.2.1 dev link4'
 ```
 
 And the iptables container needs to have ip forwarding...
@@ -69,9 +93,16 @@ And you can remove that too...
 / # iptables delete -j FORWARD 1
 ```
 
-## Service chain with koro
+Cool, those are the working bits, minus koro. So let's bring in koro.
 
-Now let's do the same thing but with koro.
+First, delete those containers (this removes ALL the containers on the host).
+
+```
+$ docker kill $(docker ps -aq)
+$ docker rm $(docker ps -aq)
+```
+
+Run those containers again, and now use koko but without assigning IP addresses.
 
 ```
 $ docker run --name=iptables -dt --privileged -e 'TCP_PORTS=80,443' -e 'UDP_PORTS=53' -e 'RATE=4mbit' -e 'BURST=4kb' vimagick/iptables:latest
@@ -119,17 +150,15 @@ $ docker kill $(docker ps -aq)
 $ docker rm $(docker ps -aq)
 ```
 
-## Setting up a service chain.
+## Creating a service chain with koro
 
-So let's go ahead and make a service chain, it'll look like...
+Let's get to the real meat-and-potoates -- time to go ahead and make a service chain, it'll look like...
 
-```
-functions: client --> firewall --> router --> webserver
-```
+![service chain](http://i.imgur.com/mIIhBML.png)
 
-So let's spin up all the pieces that we need.
+Note that those are all containers, and the interfaces created in them are veth pairs. 
 
-Pull my `dougbtv/pickle-nginx`, we'll use that.
+With that in hand -- let's spin up all the pieces that we need. Pull my `dougbtv/pickle-nginx`, we'll use that.
 
 ```
 $ docker pull dougbtv/pickle-nginx
@@ -216,7 +245,13 @@ Now we have a service chain! Huzzah! You can curl the nginx.
 
 Let's cause some [chaos, some mass confusion](https://www.youtube.com/watch?v=qJHEI8fJdiM). It's all well and good we have these four pieces all setup together.
 
-However, the reality is... Something is going to happen. In the real world -- everything is broken. To emulate that let's create this scenario -- the firewall goes down. In a more realistic scenario, this pod will be recreated. For this demonstration we're just going to let it be gone, and we'll just create new links with koko directly to the router, and then re-route
+However, the reality is... Something is going to happen. In the real world -- everything is broken. To emulate that let's create this scenario -- the firewall goes down. In a more realistic scenario, this pod will be recreated. For this demonstration we're just going to let it be gone, and we'll just create new links with koko directly to the router, and then re-route.
+
+Here's what we'll do...
+
+![service chain failure mode](http://i.imgur.com/Wpk5Kyx.png)
+
+Note that the firewall winds up failing and is gone, and we'll fix the routing and ip addressing surrounding it to patch it up.
 
 ```
 [root@koko1 centos]# docker kill firewall
@@ -262,66 +297,4 @@ And -- we're back in business, you can curl the `pickle-nginx` again.
 Using the basics from this technique for a failed service in a container you could make a number of other operations that would use the same basics, e.g. other failure modes (container that is died is replaced with a new one), or extensions of the service chain, say... Adding a DPI container somewhere in the chain.
 
 The purpose of this is to show the steps manually that could be taken automatically -- by say a CNI plugin for example. That could make these changes automatically and much more quickly than us lowly humans can make them by punching commands in a terminal.
-
-## Tomo's VPP notes
-
-His installation
-
-```
-yum -y install git
-git clone https://gerrit.fd.io/r/vpp
-cd vpp
-make install-dep
-make bootstrap
-make build
-make run
-```
-
-> To recognize interface (e.g. eth0/eth1), you need to modify /etc/vpp/startup.conf as following:
-https://wiki.fd.io/view/VPP/How_To_Connect_A_PCI_Interface_To_VPP
-vpp recognizes virtio interface of qemu, but some interface is not supported yet (due to dpdk), so please take care of baremetal case.
-
----
-
-creating vpp vxlan tunnels
-
-```
-# Each will output name of the created tunnel
-create vxlan tunnel src 10.1.1.1 dest 10.1.1.11 vni 11
-create vxlan tunnel src 10.1.1.2 dest 10.1.1.12 vni 12
-```
-
-creating koko devices...
-
-```
-# box a
-koko -d test,link1,192.168.1.1/24 -x eth1,10.1.1.1,11
-# box b
-koko -d test,link1,192.168.1.2/24 -x eth1,10.1.1.1,12
-```
-
-Create the vpp cross connections
-
-```
-set interface l2 xconnect vxlan_tunnel0 vxlan_tunnel1
-set interface l2 xconnect vxlan_tunnel1 vxlan_tunnel0
-```
-
-## Tomo's SFC notes
-
-```
-<tohayash> just a info about the term "SFC (service function chaining)". 
-<dougbtv> sure
-<dougbtv> I appreciate any input and assistance there, for sure
-<tohayash> previously Feng said that "SFC" sometimes feels "dynamic routing by service header", so from his definition, our solution is not based SFC.
-<tohayash> If someone thinking "SFC is kind of service chaining", our solution is following their definition.
-<dougbtv> ahhhh ha, it's a more generic example of just "chaining some things together" -- and not "EXACTLY service function chaining"
-<dougbtv> really good to know!!!
-<tohayash> so we may use service chaining or other terms in blog to avoid misunderstanding...
-<tohayash> yeah...
-<dougbtv> thank you :) that's an excellent pointer
-<tohayash> yeah, sometimes SFC means "SFC-NSH" only, so we may need to use other terms for NSH fundamentalist :)
-<tohayash> anyway, just about it. have a good day, doug!
-<dougbtv> Really good call Tomo, the fundamentalists do get picky. Thanks much again! Have a nice night, catch you soon
-```
 

@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2016-08-03 17:00:00-05:00
+date: 2017-08-03 17:00:00-05:00
 layout: post
 slug: koko-service-chaining
 title: Chainmail of NFV (+1 Dexterity) -- Service Chaining in Containers using Koko & Koro

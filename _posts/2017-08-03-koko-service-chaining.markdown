@@ -8,7 +8,7 @@ title: Chainmail of NFV (+1 Dexterity) -- Service Chaining in Containers using K
 category: nfvpe
 ---
 
-In this episode -- we're going to do some "service chaining" in containers, with some work facilitated by [Tomofumi Hayashi](https://github.com/s1061123) in his creation of [koko](https://github.com/redhat-nfvpe/koko) and [koro](https://github.com/s1061123/koro). Koko (the "container connector") gives us the ability to connect a network between containers (with veth, vxlan or vlan interfaces) in an isolated way, and then we can use the functionality of Koro (the "container routing" tool) to manipulate those network interfaces, and specifically their routing in order to chain them together, and then further manipulate routing and ip addressing to facilitate the changing of this chain. Our goal today will be to connect four containers in a chain of services going from a http client, to a firewall, through a router, and terminating at a web server. Once we have that chain together, we'll intentionally cause a failure of a service and then repair it using koro. 
+In this episode -- we're going to do some "service chaining" in containers, with some work facilitated by [Tomofumi Hayashi](https://github.com/s1061123) in his creation of [koko](https://github.com/redhat-nfvpe/koko) and [koro](https://github.com/s1061123/koro). Koko (the "container connector") gives us the ability to connect a network between containers (with veth, vxlan or vlan interfaces) in an isolated way (and it creates multiple interfaces for our containers too, which will allow us to chain them), and then we can use the functionality of Koro (the "container routing" tool) to manipulate those network interfaces, and specifically their routing in order to chain them together, and then further manipulate routing and ip addressing to facilitate the changing of this chain. Our goal today will be to connect four containers in a chain of services going from a http client, to a firewall, through a router, and terminating at a web server. Once we have that chain together, we'll intentionally cause a failure of a service and then repair it using koro. 
 
 (The title joke is... fairly lame. Since when aren't the other one's lame? But! It's supposed to be a reference to [magic items in Dungeons & Dragons](http://www.dandwiki.com/wiki/SRD:Magic_Items))
 
@@ -22,9 +22,9 @@ Now that we've establashed we're going to chain some services together -- let's 
 
 We're going to spin up 4 containers, and chain the services in them. All the network connections are veth created by koko.
 
-![service chain overview](blob:http://imgur.com/9bcd8809-0b1a-468c-8feb-a026e6807671)
+![service chain overview](http://i.imgur.com/TytsKnY.png)
 
-Here you can see we'll have 4 services chained together, in essence an HTTP request is made by the client, passes the firewall, gets routed by the router, and then lands at an HTTP server.
+Here you can see we'll have 4 services chained together, in essence an HTTP request is made by the client, passes the firewall, gets routed by the router, and then lands at an HTTP server. All of these services run in containers, and the network connections are veth, so all of the containers are on the same host.
 
 The firewall is just iptables, and the router is simply kernel routing and allowing ip forwarding in the container. These are shortcuts to help simplify those services allowing at us to look at the pieces that we use to deploy and manage their networking. I tried to put in an example with DPI, and I realized quickly it was too big of a piece to chew, and that it'd detract from the other core functionality to explore in this article.
 
@@ -36,7 +36,7 @@ Note that this article assumes you have setup left-over from [this previous how-
 
 This setup could be further extended and made cooler by making all vxlan (or maybe even vlan) connections to the containers and backing them with the VPP host we create in the last article. However, it's a further number of steps, and between these articles I beleieve one could make a portmanteau of the two and give that a whirl, too!
 
-Tomo has other cool goodies in the works, and without spoiling, the gist is that they further the automation of what we're doing here. In a more realistic scenario -- that's the real use-case, to have these type of operations very quickly and automatically -- instead of babying them at each step. However, this helps to expose you to the pieces at work for something like that to happen.
+Tomo has other cool goodies in the works, and without spoiling the surprise of how cool what he's been designing, the gist is that they further the automation of what we're doing here. In a more realistic scenario -- that's the real use-case, to have these type of operations very quickly and automatically -- instead of babying them at each step. However, this helps to expose you to the pieces at work for something like that to happen.
 
 ## A warm-up using iptables (optional)
 
@@ -152,7 +152,7 @@ $ docker rm $(docker ps -aq)
 
 ## Creating a service chain with koro
 
-Let's get to the real meat-and-potoates -- time to go ahead and make a service chain, it'll look like...
+Let's get to the good stuff -- time to go ahead and make a service chain, it'll look like...
 
 ![service chain](http://i.imgur.com/mIIhBML.png)
 
@@ -243,7 +243,7 @@ Now we have a service chain! Huzzah! You can curl the nginx.
 
 ## Removing an item and fixing the links
 
-Let's cause some [chaos, some mass confusion](https://www.youtube.com/watch?v=qJHEI8fJdiM). It's all well and good we have these four pieces all setup together.
+Let's cause some [chaos, some mass confusion](https://youtu.be/qJHEI8fJdiM?t=45s). It's all well and good we have these four pieces all setup together.
 
 However, the reality is... Something is going to happen. In the real world -- everything is broken. To emulate that let's create this scenario -- the firewall goes down. In a more realistic scenario, this pod will be recreated. For this demonstration we're just going to let it be gone, and we'll just create new links with koko directly to the router, and then re-route.
 

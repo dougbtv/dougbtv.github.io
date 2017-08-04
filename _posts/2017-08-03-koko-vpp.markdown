@@ -8,11 +8,11 @@ title: Connecting containers to VPP with Koko
 category: nfvpe
 ---
 
-I've [blogged](http://dougbtv.com/nfvpe/2017/04/05/koko/) about [koko](https://github.com/redhat-nfvpe/koko) in the past -- the container connector. Today we run it and connect to [FD.io](https://fd.io/) VPP ([vector packet processing](https://fd.io/technology/)). We're going to setup vxlan links between containers back to a VPP forwarding host, where we'll create cross-connects to forward packets between. As a bonus, we'll also compile [koro](https://github.com/s1061123/koro), an auxillary utility to use with koko for "container routing", which we'll using in a following companion article. Fire up your terminals, we're going to put our hands right on it and have it all up and running.
+I've [blogged](http://dougbtv.com/nfvpe/2017/04/05/koko/) about [koko](https://github.com/redhat-nfvpe/koko) in the past -- the container connector. Today we run it and connect to [FD.io](https://fd.io/) VPP ([vector packet processing](https://fd.io/technology/)), which is used for a fast data path, something we're quite interested with in the NFV space. We're going to setup vxlan links between containers back to a VPP forwarding host, where we'll create cross-connects to forward packets between. As a bonus, we'll also compile [koro](https://github.com/s1061123/koro), an auxillary utility to use with koko for "container routing", which we'll using in a following companion article. Put your gloves on start up your terminals, we're going to put our hands right on it and have it all up and running.
 
-Also -- If you haven't been paying attention, Tomo has been putting some awesome work into Koko. He's working [getting it packaged into an RPM](https://bugzilla.redhat.com/show_bug.cgi?id=1463492), he has significantly improved it by breaking out the go code so you can [use it as a library](https://github.com/redhat-nfvpe/koko/pull/16) and not just at the command line, and even beautified the syntax for the arguments! ...Among other great stuff. Great work, Tomo. Next time we can RPM install it instead of building it ourself (it's not hard, but, so handy to have the packages, I can't wait.)
+Also -- If you haven't been paying attention, Tomo has been putting some awesome work into Koko. He's working on [getting it packaged into an RPM](https://bugzilla.redhat.com/show_bug.cgi?id=1463492), he has significantly improved it by breaking out the go code so you can [use it as a library](https://github.com/redhat-nfvpe/koko/pull/16) and not just at the command line, and even beautified the syntax for the arguments! ...Among other great stuff. Great work, Tomo. Next time we can RPM install it instead of building it ourself (it's not hard, but, so handy to have the packages, I can't wait.)
 
-Since we'll be into the guts of it here, it's almost free to compile koro while we're at it. I'm excited to put my hands on koro, and we'll cover it in the next article (spoiler alert: it's got service chains in containers using koko and koro!). I'll refer to the build for koro here for those looking for it.
+Since we'll be in the thick of it here, it's almost free to compile [koro](https://github.com/s1061123/koro) while we're at it. I'm excited to put my hands on koro, and we'll cover it in the next article (spoiler alert: it's got service chains in containers using koko and koro!). I'll refer to the build for koro here for those looking for it.
 
 ## What are we building?
 
@@ -24,7 +24,7 @@ The gist we'll build three boxes (I used VMs), and we'll install VPP on one, and
 
 ## Some limitations
 
-
+When we deploy VPP, we are deploying it directly on the host, and not in containers. Also, the containers use [VXLAN](https://en.wikipedia.org/wiki/Virtual_Extensible_LAN) interfaces that have pairs on the VPP host. This isn't a limitation per-se, but, more that in the future we'd like to explore further the concepts around user-space networking with containers -- so it can feel like a limitation when you know there's more territory to explore!
 
 ## Boxen setup & requirements.
 

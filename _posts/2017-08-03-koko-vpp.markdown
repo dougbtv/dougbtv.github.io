@@ -26,6 +26,8 @@ The gist we'll build three boxes (I used VMs), and we'll install VPP on one, and
 
 When we deploy VPP, we are deploying it directly on the host, and not in containers. Also, the containers use [VXLAN](https://en.wikipedia.org/wiki/Virtual_Extensible_LAN) interfaces that have pairs on the VPP host. This isn't a limitation per-se, but, more that in the future we'd like to explore further the concepts around user-space networking with containers -- so it can feel like a limitation when you know there's more territory to explore!
 
+Note that this is a manual process shown here, to show you the working parts of these applications. A likely end goal would be to automate these processes in order to have this happen for larger, more complex systems -- and in much shorter time periods (and I mean MUCH shorter!) Tomo is working towards these implementations, but I won't spoil all the fun yet.
+
 ## Boxen setup & requirements.
 
 For my setup, I used 3 boxes... 4 vcpus, 2048 megs of ram each. I assume a CentOS 7 distro for each of them. I highly recommend CentOS, but, you can probably mentally convert to another distro if you so please. Also, I used VMs, VMs or baremetal will work -- I tend to like [this approach to spinning up a CentOS cloud image with virsh](http://giovannitorres.me/create-a-linux-lab-on-kvm-using-cloud-images.html).

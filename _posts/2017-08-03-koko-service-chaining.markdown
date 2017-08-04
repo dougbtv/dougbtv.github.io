@@ -8,7 +8,23 @@ title: Chainmail of NFV (+1 Dexterity) -- Service Chaining in Containers using K
 category: nfvpe
 ---
 
-In this episode -- we're going to do some "service chaining" in containers, with some work facilitated by [Tomofumi Hayashi](https://github.com/s1061123) in his creation of [koko](https://github.com/redhat-nfvpe/koko) and [koro](https://github.com/s1061123/koro). Koko (the "container connector") gives us the ability to connect a network between containers (with veth, vxlan or vlan interfaces) in an isolated way (and it creates multiple interfaces for our containers too, which will allow us to chain them), and then we can use the functionality of Koro (the "container routing" tool) to manipulate those network interfaces, and specifically their routing in order to chain them together, and then further manipulate routing and ip addressing to facilitate the changing of this chain. Our goal today will be to connect four containers in a chain of services going from a http client, to a firewall, through a router, and terminating at a web server. Once we have that chain together, we'll intentionally cause a failure of a service and then repair it using koro. 
+In this episode -- we're going to do some "service chaining" in containers,
+with some work facilitated by [Tomofumi Hayashi](https://github.com/s1061123)
+in his creation of [koko](https://github.com/redhat-nfvpe/koko) and
+[koro](https://github.com/s1061123/koro).
+
+Koko (the "container connector") gives us the ability to connect a network
+between containers (with veth, vxlan or vlan interfaces) in an isolated way
+(and it creates multiple interfaces for our containers too, which will allow us
+to chain them), and then we can use the functionality of Koro (the "container
+routing" tool) to manipulate those network interfaces, and specifically their
+routing in order to chain them together, and then further manipulate routing
+and ip addressing to facilitate the changing of this chain.
+
+Our goal today will be to connect four containers in a chain of services going
+from a http client, to a firewall, through a router, and terminating at a web
+server. Once we have that chain together, we'll intentionally cause a failure
+of a service and then repair it using koro.
 
 (The title joke is... fairly lame. Since when aren't the other one's lame? But! It's supposed to be a reference to [magic items in Dungeons & Dragons](http://www.dandwiki.com/wiki/SRD:Magic_Items))
 

@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-04-05 12:05:08-05:00
+date: 2017-04-05 12:05:09-05:00
 layout: post
 slug: glusterfs-persistent
 title: How-to use GlusterFS to back persistent volumes in Kubernetes
@@ -25,7 +25,7 @@ That's what we're going to base it on. If you'd rather not use virtual machines,
 
 Ok, step zero -- you need a clone of my playbooks, so make a clone and move into it's directory...
 
-    git clone https://github.com/dougbtv/kube-centos-ansible.git
+    git clone --branch v0.0.6 https://github.com/dougbtv/kube-centos-ansible.git
 
 Since we've got that we're going to do run the `virt-host-setup.yml` playbook which sets up our CentOS host so that it can create a few virtual machines. The defaults spin up 4 machines, and you can modify some of these preferences by going into the `vars/all.yml` if you please. Also, you'll need to modify the `inventory/virthost.inventory` file to suit your environment.
 

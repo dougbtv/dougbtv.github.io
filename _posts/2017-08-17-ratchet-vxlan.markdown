@@ -1,10 +1,10 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-08-17 14:30:00-05:00
+date: 2017-08-17 14:30:01-05:00
 layout: post
 slug: ratchet-vxlan
-title: Ratchet CNI: Using VXLAN for network isolation for pods in Kubernetes
+title: Ratchet CNI -- Using VXLAN for network isolation for pods in Kubernetes
 category: nfvpe
 ---
 

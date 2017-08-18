@@ -4,17 +4,19 @@ comments: true
 date: 2017-08-17 14:30:00-05:00
 layout: post
 slug: ratchet-vxlan
-title: Ratchet CNI: Using VXLAN for container isolation in Kubernetes
+title: Ratchet CNI: Using VXLAN for network isolation for pods in Kubernetes
 category: nfvpe
 ---
 
 In today's episode we're looking at [Ratchet CNI](https://github.com/dougbtv/ratchet-cni), an implementation of [Koko](https://github.com/redhat-nfvpe/koko) -- but in CNI, the container networking interface that is used by Kubernetes for creating network interfaces. The idea being that the network interface creation can be performed by Kubernetes via CNI. Specifically we're going to create some network isolation of network links between containers to demonstrate a series of "cloud routers". We can use the capabilities of Koko to both create vEth connections between containers when they're local to the same host, and then VXLAN tunnels to containers when they're across hosts. Our goal today will be to install & configure Ratchet CNI on an existing cluster, we'll verify it's working, and then we'll install a cloud router setup based on [zebra pen](https://github.com/dougbtv/zebra-pen) (a cloud router demo).
 
-Here's what the router will look like when we're done:
+Here's what the setup will look like when we're done:
 
 ![diagram](http://i.imgur.com/rpO2A20.png)
 
 The gist is that the green boxes are Kubernetes minions which run pods, and the blue boxes are pods running on those hosts, and the yellow boxes are the network interfaces that will be created by Ratchet (and therefore Koko). In this scenario, just one VXLAN tunnel is created when going between the hosts.
+
+So that means we'll route traffic from "CentOS A" container, across 2 routers (which use OSPF) to finally land at "CentOS B", and have a ping come back across the links.
 
 Note that Ratchet is still a prototype, and some of the constraints of it are limited to the static way in which interfaces and addressing is specified. This is indeed a limitation, but is intended to illustrate how you might specify the links between these containers.
 
@@ -121,7 +123,7 @@ Let's look at my current configuration...
 
 It's a Flannel config, I'm gonna keep this around for a minute, cause I'll use it in my upcoming configs.
 
-Next, let's assess what you have available for networking. Mine is pretty simple. Each of my nodes have a single nic -- `eth0`, and it's on the `192.168.1.0/24` network, and that network is essentially flat -- it can access on that NIC, and also the other nodes on the network. Naturally, in real life -- your network will be more complex. But, in this step... Choose the proper NIC and IP address for your setup.
+Next, let's assess what you have available for networking. Mine is pretty simple. Each of my nodes have a single nic -- `eth0`, and it's on the `192.168.1.0/24` network, and that network is essentially flat -- it can access the WAN over that NIC, and also the other nodes on the network. Naturally, in real life -- your network will be more complex. But, in this step... Choose the proper NIC and IP address for your setup.
 
 So, I pick out my NIC and IP address, what's it look like on my nodes...
 
@@ -212,21 +214,228 @@ And you can check those labels out if you need to...
 
 We are now all configured and ready to rumble with Ratchet. Let's first create a couple pods to make sure everything is running.
 
+Let's create these pods using this yaml:
 
+```
 ---
-
-continue here
-
-ips...
-
-192.168.1.90 master
-192.168.1.73 1 
-192.168.1.33 2
-
+apiVersion: v1
+kind: Pod
+metadata:
+  name: primary-pod
+  labels:
+    app: primary-pod
+    ratchet: "true"
+    ratchet.pod_name: "primary-pod"
+    ratchet.target_pod: "primary-pod"
+    ratchet.target_container: "primary-pod"
+    ratchet.public_ip: "1.1.1.1"
+    ratchet.local_ip: "192.168.2.100"
+    ratchet.local_ifname: "in1"
+    ratchet.pair_name: "pair-pod"
+    ratchet.pair_ip: "192.168.2.101"
+    ratchet.pair_ifname: "in2"
+    ratchet.primary: "true"
+spec:
+  containers:
+    - name: primary-pod
+      image: dougbtv/centos-network
+      command: ["/bin/bash"]
+      args: ["-c", "while true; do sleep 10; done"]
+  nodeSelector:
+    ratchetside: left
 ---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pair-pod
+  labels:
+    app: pair-pod
+    ratchet: "true"
+    ratchet.pod_name: pair-pod
+    ratchet.primary: "false"
+spec:
+  containers:
+    - name: pair-pod
+      image: dougbtv/centos-network
+      command: ["/bin/bash"]
+      args: ["-c", "while true; do sleep 10; done"]
+  nodeSelector:
+    ratchetside: right
+```
+
+Likely the most important things to look at are these labels:
+
+```
+ratchet: "true"
+ratchet.pod_name: "primary-pod"
+ratchet.target_pod: "primary-pod"
+ratchet.target_container: "primary-pod"
+ratchet.local_ip: "192.168.2.100"
+ratchet.local_ifname: "in1"
+ratchet.pair_name: "pair-pod"
+ratchet.pair_ip: "192.168.2.101"
+ratchet.pair_ifname: "in2"
+ratchet.primary: "true"
+```
+
+These are how ratchet knows how to setup the interfaces on the pods. You set up each pod as pairs. Where there's a "primary" and a "pair". You need to (as of now) know the name of the pod that's going to be the pair. Then you can set the names of the interfaces, and which IPs are assigned. In this case we're going to have an interface called `in1` on the primary side, and an interface named `in2` on the pair side. The primary will be assigned the IP address `192.168.2.100` and the pair will have the IP address `192.168.2.101`. 
+
+Of all of the parameters, the keystone is the `ratchet: "true"` parameter, which tells us that ratchet should process this pod -- otherwise, it will pass through the pod to another CNI plugin given the `delegate` parameter in the ratchet configuration.
+
+I put that into a file `example.yaml` and created it as such:
+
+```
+[centos@kube-master ~]$ kubectl create -f example.yaml 
+```
+
+And then watched it come up with `watch -n1 kubectl get pods`. Once it's up, we can check out some stuff.
+
+But -- you should also check out which nodes they're running on to make sure you got the labelling and the nodeSelector's correct. You can do this by checking out the description of the pods, and looking for the node values.
+
+```
+$ kubectl describe pod primary-pod | grep "^Node"
+$ kubectl describe pod pair-pod | grep "^Node"
+```
+
+Now that you know they're on differnt nodes, let's enter the primary pod. 
+
+```
+[centos@kube-master ~]$ kubectl exec -it primary-pod -- /bin/bash
+```
+
+Now we can take a look at the interfaces...
+
+```
+[root@primary-pod /]# ip a | grep -P "(^\d|inet\s)"
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    inet 127.0.0.1/8 scope host lo
+7: in1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UNKNOWN qlen 1000
+    inet 192.168.2.100/24 brd 192.168.2.255 scope global in1
+```
+
+Note that there's two interfaces:
+
+* `lo` which is a loopback created by the `boot_network` CNI pass through parameter in our configuration.
+* `in1` which is a vxlan, assigned the `192.168.2.100` IP address as we defined in the pod labels.
+
+Let's look at the vxlan properties like so:
+
+```
+[root@primary-pod /]# ip -d link show in1
+7: in1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UNKNOWN mode DEFAULT qlen 1000
+    link/ether 9e:f4:ab:a0:86:7a brd ff:ff:ff:ff:ff:ff link-netnsid 0 promiscuity 0 
+    vxlan id 11 remote 192.168.1.33 dev 2 srcport 0 0 dstport 4789 l2miss l3miss ageing 300 addrgenmode eui64 
+```
+
+You can see that it's a vxlan with an id of 11, and the remote side is @ `192.168.1.33` which is the IP address of the second minion node. That's looking correct. 
+
+That being said, we can ping the other side now, that we know is @ IP address of `192.168.2.101`
+
+```
+[root@primary-pod /]# ping -c1 192.168.2.101
+PING 192.168.2.101 (192.168.2.101) 56(84) bytes of data.
+64 bytes from 192.168.2.101: icmp_seq=1 ttl=64 time=0.546 ms
+```
+
+Excellent! All is well and good, let's destroy this pod, and shortly we'll move onto the more interesting setup.
+
+```
+[centos@kube-master ~]$ kubectl delete -f example.yaml 
+```
+
+## Quick clean-up procedure
+
+Ratchet is in need of some clean-up routines of its own, and since they're not implemented yet, we have to clean up the etcd data ourselves. So let's do that right now.
+
+We're going to create a kubernetes job to delete, with this yaml:
+
+```
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: etcd-delete
+spec:
+  template:
+    metadata:
+      name: etcd-delete
+    spec:
+      containers:
+      - name: etcd-delete
+        image: centos:centos7
+        command: ["/bin/bash"]
+        args:
+          - "-c"
+          - >
+            ETCD_HOST=etcd-client.ratchet.svc.cluster.local;
+            curl -s -L -X DELETE http://$ETCD_HOST:2379/v2/keys/ratchet\?recursive=true;
+      restartPolicy: Never
+```
+
+I created this file as `job-delete-etcd.yaml`, and then executed it as such:
+
+```
+[centos@kube-master ~]$ kubectl create -f job-delete-etcd.yaml 
+```
+
+And I want to watch it come to completion with:
+
+```
+[centos@kube-master ~]$ watch -n1 kubectl get pods --show-all
+```
+
+You can now remove the job if you wish:
+
+```
+[centos@kube-master ~]$ kubectl delete -f job-delete-etcd.yaml 
+```
 
 ## Running the whole cloud router
 
+Next, we're going to run a more interesting setup. I've got [the YAML resource definitions stored in this gist](https://gist.github.com/dougbtv/d5db4db7dde33349df8b25d8998bfeb7), so you can peruse them more deeply. 
+
+A current limitation is that there are 2 parts, you have to run the first part, wait for the pods to come up, then you can run the second part. This is due to the fact that the current VXLAN implementation of Ratchet is a sketch, and doesn't take into account a few different use cases -- one of which being that there is sometimes more than "just a pair" -- and in this case, there's 3 pairs and some overlap. So we create them in an ordered fashion to let Ratchet think of them just as pairs -- because otherwise if we create them all right now, we get a race condition, and usually the vEth wins, so... We're working around that here ;)
+
+Let's download those yaml files.
+
+```
+$ curl -L https://goo.gl/QLGB2C > cloud-router-part1.yaml
+$ curl -L https://goo.gl/aQotzQ > cloud-router-part2.yaml
+```
+
+Now, create the first part, and let the pods come up.
+
+```
+[centos@kube-master ~]$ kubectl create -f cloud-router-part1.yaml 
+[centos@kube-master ~]$ watch -n1 kubectl get pods --show-all
+```
+
+Then you can create the second part, and watch the last single pod come up.
+
+```
+[centos@kube-master ~]$ kubectl create -f cloud-router-part2.yaml 
+[centos@kube-master ~]$ watch -n1 kubectl get pods --show-all
+```
+
+Using the diagram up at the top of the post, we can figure out that the "Centos A" box routes through both quagga-a and quagga-b before reaching Centos B -- so that means if we ping Centos B from Centos A -- that's an end-to-end test. So let's run that ping:
+
+```
+[centos@kube-master ~]$ kubectl exec -it centosa -- /bin/bash
+[root@centosa /]# ping -c5 192.168.4.101
+PING 192.168.4.101 (192.168.4.101) 56(84) bytes of data.
+64 bytes from 192.168.4.101: icmp_seq=1 ttl=62 time=0.399 ms
+[... snip ...]
+```
+
+Hurray! Feel free to go and dig through the rest of the pods and check out `ip a` and `ip -d link show` etc. Also feel free to enter the quagga pods and run `vtysh` and see what's going on in the routers, too.
+
 ## Debugging Ratchet issues
+
+This is the very short version, but, there's basically two places you want to look to see what's going on.
+
+* `journalctl -u kubelet -f` will give you the output from ratchet when it's run by CNI proper, this is how it's initially run.
+* `tail -f /tmp/ratchet-child.log` -- this is the log from the child process, and likely will give you the most information. Note that this method of logging to temp is an ulllllltra hack. And I mean it's a super hack. It's just a work-around to get some output while debugging for me.
+
+
 
 

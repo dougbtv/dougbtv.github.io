@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-07-18 14:00:03-05:00
+date: 2017-07-18 14:00:04-05:00
 layout: post
 slug: openshift-ansible-lab-byo
 title: BYOB - Bring your own boxen to an OpenShift Origin lab!
@@ -61,7 +61,7 @@ I've got a few playbooks put together in a repo that'll help you gets some basic
 Go ahead and clone that.
 
 ```
-$ git clone https://github.com/dougbtv/openshift-ansible-bootstrap.git
+$ git clone --branch v0.0.1 https://github.com/dougbtv/openshift-ansible-bootstrap.git
 ```
 
 ## Setup the virtual machine host.

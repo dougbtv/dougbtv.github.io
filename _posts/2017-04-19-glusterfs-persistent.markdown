@@ -10,7 +10,8 @@ category: nfvpe
 
 A mountain I keep walking around instead of climbing in my Kubernetes lab is storing persistent data, I kept avoiding it. Sure -- in a lab, I can just throw it all out most of the time. But, what about when we really need it? I decided I would use [GlusterFS](https://www.gluster.org/) to back my [persistent volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) and I've got to say... My experience with GlusterFS was great, I really enjoyed using it, and it seems rather resilient -- and best of all? It was pretty easy to get going and to operate. Today we'll spin up a Kubernetes cluster using my [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbooks, and use some newly included plays that also setup a GlusterFS cluster. With that in hand, our goal will be to setup the persistent volumes and claims to those volumes, and we'll spin up a MariaDB pod that stores data in a persistent volume, important data that we want to keep -- so we'll make some data about Vermont beer as it's very very important.
 
-Update: Hey! Check it out -- I have a [new article about GlusterFS for kube](http://dougbtv.com//nfvpe/2017/08/10/gluster-kubernetes/). Worth a gander as well.
+> **Update:** Hey! Check it out -- I have a [new article about GlusterFS for kube]
+> (http://dougbtv.com//nfvpe/2017/08/10/gluster-kubernetes/). Worth a gander as well.
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-30 17:02:00-05:00
+date: 2017-05-30 17:02:01-05:00
 layout: post
 slug: vnf-asterisk-kubernetes
 title: VNFs in Kubernetes? Sure thing, here's vnf-asterisk!
@@ -12,7 +12,7 @@ Want to run a virtual network function (VNF) on Kubernetes? You're in luck! This
 
 ![vnf asterisk logo](https://github.com/dougbtv/vnf-asterisk-controller/raw/master/docs/vnf-asterisk-controller-logo.png)
 
-I've also submitted a talk, along with Leif Madsen about running this VNF for [Astricon 2017](http://www.asterisk.org/community/astricon-user-conference), so we'll see if it makes it in there too.
+I've also submitted a talk, along with Leif Madsen about running this VNF for [Astricon 2017](http://www.asterisk.org/community/astricon-user-conference), so we'll see if it makes it in there too. Edit: Updated to add, we are having a [day-of-learning at Astricon 2017 -- we're having 4 workshops], please come and hang out and give it a try with us in person, we're more than happy to help you out, and there is much hacking to be had!
 
 The main take-away for folks here should be A. some nice exposure to how you might both take apart the pieces to containerize them, and also how to knit them back together with Kubernetes (and some Kubernetes usage), but also B. To use as a reference, and to decide what you do and do not like about it. It's OK to not like some of it! In fact, I hope it helps you form your own opinions. In fact, while I do have some opinions -- I try to keep them loose as these technologies grow and gain maturity. There's already things here that I would change, and certain things that are done as a stop gap. 
 

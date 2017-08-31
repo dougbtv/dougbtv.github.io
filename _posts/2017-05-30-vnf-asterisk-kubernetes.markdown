@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-30 17:02:02-05:00
+date: 2017-05-30 17:02:03-05:00
 layout: post
 slug: vnf-asterisk-kubernetes
 title: VNFs in Kubernetes? Sure thing, here's vnf-asterisk!
@@ -35,7 +35,7 @@ Additionally, you need git (and probably your favorite text editor) on the maste
 But if that seems overwhelming? Don't let it be! I've got you covered with these two labs that will get you up and running. All you really need is a machine to use as a virtual machine host, and Ansible installed.
 
 * First use my [kubernetes on CentOS lab](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) which uses my [kube-centos-ansible playbooks](https://github.com/dougbtv/kube-centos-ansible)
-* Then, add to it my lab on [glusterFS for backing persistent volume stores on Kubernetes](http://dougbtv.com/nfvpe/2017/04/05/glusterfs-persistent/)
+* Then, add to it my lab on [glusterFS for backing persistent volume stores on Kubernetes](http://dougbtv.com//nfvpe/2017/08/10/gluster-kubernetes/)
 
 Naturally, if you have another avenue to achieve the same, then go for it!
 

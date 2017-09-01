@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-06-29 08:05:00-05:00
+date: 2017-06-29 08:05:01-05:00
 layout: post
 slug: kubernetes-crio
 title: Look ma, No Docker! Kubernetes with CRI-O, and no Docker at all!
@@ -86,10 +86,10 @@ Change the IP to the IP of your virtual machine host, and set the private key lo
 
 ## Let's run this playbook!
 
-So there's a bit more setup than what's the meat and potatoes... We're about to do that now.
+So there's a bit more setup than what's the meat and potatoes... We're about to do that now. (Note that we specify a kubernetes version to install here, there's a [current issue](https://github.com/dougbtv/kube-centos-ansible/issues/37) with the playbooks that doesn't yet know how to handle that.)
 
 ```
-$ ansible-playbook -i inventory/vms.inventory kube-install.yml -e 'container_runtime=crio'
+$ ansible-playbook -i inventory/vms.inventory -e 'container_runtime=crio' -e 'kube_version=1.6.7-0' kube-install.yml
 ```
 
 ## Verify the installation

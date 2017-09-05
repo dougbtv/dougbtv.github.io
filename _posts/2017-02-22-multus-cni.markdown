@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-02-22 11:35:03-05:00
+date: 2017-02-22 11:35:04-05:00
 layout: post
 slug: multus-cni
 title: So you want to expose a pod to multiple network interfaces? Enter Multus-CNI
@@ -54,8 +54,10 @@ Note that I'm going to skip over some of the details of how to customize the Ans
 
 Alright, let's pull the rip cord! Ok, first thing's first clone my kube-centos-ansible repo. 
 
+(note: you're cloning at a specific tag	to reference an	old style inventory, if	you wish you can remove	the `--branch` parameter, and go via head, and figure out the new inventory, just browse the `./inventory` dir)
+
 ```
-$ git clone https://github.com/dougbtv/kube-centos-ansible.git
+$ git clone --branch v0.1.1 https://github.com/dougbtv/kube-centos-ansible.git
 $ cd kube-centos-ansible
 ```
 

@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-02-16 15:00:04-05:00
+date: 2017-02-16 15:00:05-05:00
 layout: post
 slug: kubernetes-1.5-centos
 title: Let's spin up k8s 1.5 on CentOS (with CNI pod networking, too!)
@@ -30,8 +30,10 @@ Alright, so here's the parts of this playbook, and it...
 
 Along with the below you need a client machine from which to run your ansible playbooks. It can be the same host as one of the below if you want, but, you'll need to install ansible & git on that machine whatever one it may be. Once you've got that machine, go ahead and clone this repo.
 
+(note: you're cloning at a specific tag to reference an old style inventory, if you wish you can remove the `--branch` parameter, and go via head, and figure out the new inventory, just browse the `./inventory` dir)
+
 ```
-$ git clone https://github.com/dougbtv/kube-centos-ansible.git
+$ git clone --branch v0.1.1 https://github.com/dougbtv/kube-centos-ansible.git
 $ cd kube-centos-ansible
 ```
 

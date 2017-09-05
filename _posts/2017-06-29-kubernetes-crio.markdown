@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-06-29 08:05:01-05:00
+date: 2017-06-29 08:05:02-05:00
 layout: post
 slug: kubernetes-crio
 title: Look ma, No Docker! Kubernetes with CRI-O, and no Docker at all!
@@ -36,8 +36,10 @@ As I mentioned previously -- skip this section if you already have machine provi
 
 Alright, first thing's first, let's clone the kube-centos-ansible playbooks. 
 
+(note: you're cloning at a specific tag	to reference an	old style inventory, if	you wish you can remove	the `--branch` parameter, and go via head, and figure out the new inventory, just browse the `./inventory` dir)
+
 ```
-$ git clone https://github.com/dougbtv/kube-centos-ansible.git && cd kube-centos-ansible
+$ git clone --branch v0.1.1 https://github.com/dougbtv/kube-centos-ansible.git && cd kube-centos-ansible
 ```
 
 In there I'm going to have an inventory you should modify, so go ahead and modify this and put in the proper hostname/ip.

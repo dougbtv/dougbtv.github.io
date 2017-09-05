@@ -24,7 +24,7 @@ Note that Ratchet is still a prototype, and some of the constraints of it are li
 
 Required:
 
-* A Kube cluster, [spin one up my way](https://github.com/dougbtv/kube-centos-ansible) if you wish.
+* A Kube cluster, [spin one up my way](https://github.com/redhat-nfvpe/kube-centos-ansible) if you wish.
 * Two nodes where you can schedule pods (and have the ability modify the CNI configuration on those nodes)
 
 Optional:

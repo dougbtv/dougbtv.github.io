@@ -19,7 +19,7 @@ The beginning base of these instruction on the [official quickstart guide](https
 
 So, this assumes you've already got a Kubernetes cluster up and running, and usually... These articles assume CentOS 7.3 running. It might not exactly require CentOS 7.3 this time, but, just know that's my reference, and I'm using Kubernetes 1.6. 
 
-If you don't have a Kubernetes cluster up, may I recommend using my [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbooks -- and I've got an article [detailing how to use those playbooks](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/).
+If you don't have a Kubernetes cluster up, may I recommend using my [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) playbooks -- and I've got an article [detailing how to use those playbooks](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/).
 
 Optionally -- you can create persistent volumes. You can skip this step if you want, but, the example charts that we will install require some volume persistence. We'll run it with persistence turned off, but, it's "more realistic" if-you-will. And if you don't have persistent volumes setup, you might want to try [my method for using GlusterFS to back persistent volumes, as detailed in this blog post](http://dougbtv.com/nfvpe/2017/04/05/glusterfs-persistent/).
 

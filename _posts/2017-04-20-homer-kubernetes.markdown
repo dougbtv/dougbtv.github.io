@@ -31,7 +31,7 @@ The steepest of requirements being that you need Kubernetes running -- actually 
 * Kubernetes, 1.6.0 or greater (1.5 might work, I haven't tested it)
 * Master node has git installed (and maybe your favorite text editor)
 
-That's a short list, right? Well... Installing Kubernetes isn't that hard (and I've got the [ansible playbooks to do it](https://github.com/dougbtv/kube-centos-ansible)). But, we also need to have some persistent storage to use.
+That's a short list, right? Well... Installing Kubernetes isn't that hard (and I've got the [ansible playbooks to do it](https://github.com/redhat-nfvpe/kube-centos-ansible)). But, we also need to have some persistent storage to use.
 
 Why's that? Well... Containers are for the most part ephemeral in nature. They come, and they go, and they don't leave a lot of much around. We love them for that! They're very reproducible, and we love that. But -- with that we lose our data everytime they die. There's certain stuff we want to keep around with Homer -- especially: All of our database data. So we create persistent storage in order to keep it around. There's [many plugins for persistent volumes you can use with Kubernetes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes), such as NFS, iSCSI, CephFS, Flocker (and proprietary stuff, too), etc. 
 
@@ -102,7 +102,7 @@ Now you'll have a bunch of images in your `docker images` list, and you can `doc
 
 Alright, now this is rather important, we're going to need persistent volumes to store our data in. So let's get those going.
 
-I'm really hoping you followed my tutorial on [using Kubernetes with GlusterFS](http://dougbtv.com/nfvpe/2017/04/05/glusterfs-persistent/) because you'll have exactly the volumes we need. If you haven't -- I'm leaving this as an excersize for the reader to create [host path volumes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/), say if you're using minikube or otherwise. If you do choose that adventure, think about modifying my [glusterfs-volumes.yaml](https://github.com/dougbtv/kube-centos-ansible/blob/master/roles/glusterfs-kube-config/templates/glusterfs-volumes.yaml.j2) file.
+I'm really hoping you followed my tutorial on [using Kubernetes with GlusterFS](http://dougbtv.com/nfvpe/2017/04/05/glusterfs-persistent/) because you'll have exactly the volumes we need. If you haven't -- I'm leaving this as an excersize for the reader to create [host path volumes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/), say if you're using minikube or otherwise. If you do choose that adventure, think about modifying my [glusterfs-volumes.yaml](https://github.com/redhat-nfvpe/kube-centos-ansible/blob/master/roles/glusterfs-kube-config/templates/glusterfs-volumes.yaml.j2) file.
 
 During my tutorial where we created volumes, there's a file in cento's home @ `/home/centos/glusterfs-volumes.yaml` -- and we ran a `kubectl create -f /home/centos/glusterfs-volumes.yaml`. 
 

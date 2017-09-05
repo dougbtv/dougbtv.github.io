@@ -8,13 +8,13 @@ title: How-to use GlusterFS to back persistent volumes in Kubernetes
 category: nfvpe
 ---
 
-A mountain I keep walking around instead of climbing in my Kubernetes lab is storing persistent data, I kept avoiding it. Sure -- in a lab, I can just throw it all out most of the time. But, what about when we really need it? I decided I would use [GlusterFS](https://www.gluster.org/) to back my [persistent volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) and I've got to say... My experience with GlusterFS was great, I really enjoyed using it, and it seems rather resilient -- and best of all? It was pretty easy to get going and to operate. Today we'll spin up a Kubernetes cluster using my [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbooks, and use some newly included plays that also setup a GlusterFS cluster. With that in hand, our goal will be to setup the persistent volumes and claims to those volumes, and we'll spin up a MariaDB pod that stores data in a persistent volume, important data that we want to keep -- so we'll make some data about Vermont beer as it's very very important.
+A mountain I keep walking around instead of climbing in my Kubernetes lab is storing persistent data, I kept avoiding it. Sure -- in a lab, I can just throw it all out most of the time. But, what about when we really need it? I decided I would use [GlusterFS](https://www.gluster.org/) to back my [persistent volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) and I've got to say... My experience with GlusterFS was great, I really enjoyed using it, and it seems rather resilient -- and best of all? It was pretty easy to get going and to operate. Today we'll spin up a Kubernetes cluster using my [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) playbooks, and use some newly included plays that also setup a GlusterFS cluster. With that in hand, our goal will be to setup the persistent volumes and claims to those volumes, and we'll spin up a MariaDB pod that stores data in a persistent volume, important data that we want to keep -- so we'll make some data about Vermont beer as it's very very important.
 
 **Update:** Hey! Check it out -- I have a [new article about GlusterFS for kube](http://dougbtv.com//nfvpe/2017/08/10/gluster-kubernetes/). Worth a gander as well.
 
 ## Requirements
 
-First up, this article will use my [spin-up Kubernetes on CentOS article](http://dougbtv.com//nfvpe/2017/02/16/kubernetes-1.5-centos/) as a basis. So if there's any details you feel are missing from here -- make sure to double check that article as it goes further in depth for the moving parts that make up the [kube-centos-ansible](https://github.com/dougbtv/kube-centos-ansible) playbooks. Particularly there's more detail that article on how to modify the inventories and what's going on there, too (and where your ssh keys are, which you'll need too).
+First up, this article will use my [spin-up Kubernetes on CentOS article](http://dougbtv.com//nfvpe/2017/02/16/kubernetes-1.5-centos/) as a basis. So if there's any details you feel are missing from here -- make sure to double check that article as it goes further in depth for the moving parts that make up the [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) playbooks. Particularly there's more detail that article on how to modify the inventories and what's going on there, too (and where your ssh keys are, which you'll need too).
 
 Now, what you'll need...
 
@@ -27,7 +27,7 @@ That's what we're going to base it on. If you'd rather not use virtual machines,
 
 Ok, step zero -- you need a clone of my playbooks, so make a clone and move into it's directory...
 
-    git clone --branch v0.0.6 https://github.com/dougbtv/kube-centos-ansible.git
+    git clone --branch v0.0.6 https://github.com/redhat-nfvpe/kube-centos-ansible.git
 
 Since we've got that we're going to do run the `virt-host-setup.yml` playbook which sets up our CentOS host so that it can create a few virtual machines. The defaults spin up 4 machines, and you can modify some of these preferences by going into the `vars/all.yml` if you please. Also, you'll need to modify the `inventory/virthost.inventory` file to suit your environment.
 

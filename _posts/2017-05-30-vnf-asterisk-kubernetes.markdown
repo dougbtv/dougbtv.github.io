@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-30 17:02:03-05:00
+date: 2017-05-30 17:02:04-05:00
 layout: post
 slug: vnf-asterisk-kubernetes
 title: VNFs in Kubernetes? Sure thing, here's vnf-asterisk!
@@ -103,6 +103,24 @@ nameserver 192.168.122.1
 ```
 
 Note: That won't be sticky through reboots. I'll leave that as an exercise for my readers (or someone can make a PR on my playbooks!)
+
+But wait! It can be sticky through reboots, due to help from guest star contributor [@leifmadsen](https://twitter.com/leifmadsen?lang=en) who writes:
+
+```
+$ cat /etc/sysconfig/network-scripts/ifcfg-eth0
+DEVICE="eth0"
+BOOTPROTO="dhcp"
+ONBOOT="yes"
+TYPE="Ethernet"
+USERCTL="yes"
+PEERDNS="yes"
+IPV6INIT="no"
+PERSISTENT_DHCLIENT="1"
+DNS1=10.96.0.10
+DNS2=192.168.122.1
+```
+
+(Naturally, modify to fit the rest of your suite o' settings.)
 
 And just make sure that it works.
 

@@ -88,7 +88,7 @@ Change the IP to the IP of your virtual machine host, and set the private key lo
 
 ## Let's run this playbook!
 
-So there's a bit more setup than what's the meat and potatoes... We're about to do that now. (Note that we specify a kubernetes version to install here, there's a [current issue](https://github.com/redhat-nfvpe/kube-centos-ansible/issues/37) with the playbooks that doesn't yet know how to handle that.)
+So there's a bit more setup than what's the meat and potatoes... We're about to do that now.
 
 ```
 $ ansible-playbook -i inventory/vms.inventory -e 'container_runtime=crio'  kube-install.yml

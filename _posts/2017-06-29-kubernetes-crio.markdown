@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-06-29 08:05:02-05:00
+date: 2017-06-29 08:05:03-05:00
 layout: post
 slug: kubernetes-crio
 title: Look ma, No Docker! Kubernetes with CRI-O, and no Docker at all!
@@ -39,7 +39,7 @@ Alright, first thing's first, let's clone the kube-centos-ansible playbooks.
 (note: you're cloning at a specific tag	to reference an	old style inventory, if	you wish you can remove	the `--branch` parameter, and go via head, and figure out the new inventory, just browse the `./inventory` dir)
 
 ```
-$ git clone --branch v0.1.1 https://github.com/redhat-nfvpe/kube-centos-ansible.git && cd kube-centos-ansible
+$ git clone https://github.com/redhat-nfvpe/kube-centos-ansible.git && cd kube-centos-ansible
 ```
 
 In there I'm going to have an inventory you should modify, so go ahead and modify this and put in the proper hostname/ip.
@@ -52,10 +52,10 @@ kubehost ansible_host=192.168.1.119 ansible_ssh_user=root
 kubehost
 ```
 
-Now that you have that, you should be able to run
+Now that you have that, you should be able to run the `virt-host-setup.yml` playbook. Note that we're specifying 4 gigs of RAM for each virtual machine. GCC was not super happy with just 2 gigs when going to compile CRI-O, so I decided to bump it up a bit (imagine calling 2 gigs of RAM "a bit" in 1995? That would be funny).
 
 ```
-$ ansible-playbook -i inventory/virthost.inventory virt-host-setup.yml
+$ ansible-playbook -i inventory/virthost.inventory -e "ram_mb=4096"  virt-host-setup.yml
 ```
 
 Importantly, this will create some ssh keys on that target virtual machine host that you'll want to put on the machine where you're running Ansible.
@@ -91,7 +91,7 @@ Change the IP to the IP of your virtual machine host, and set the private key lo
 So there's a bit more setup than what's the meat and potatoes... We're about to do that now. (Note that we specify a kubernetes version to install here, there's a [current issue](https://github.com/redhat-nfvpe/kube-centos-ansible/issues/37) with the playbooks that doesn't yet know how to handle that.)
 
 ```
-$ ansible-playbook -i inventory/vms.inventory -e 'container_runtime=crio' -e 'kube_version=1.6.7-0' kube-install.yml
+$ ansible-playbook -i inventory/vms.inventory -e 'container_runtime=crio'  kube-install.yml
 ```
 
 ## Verify the installation

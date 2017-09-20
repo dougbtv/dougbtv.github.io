@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-08-10 15:00:00-05:00
+date: 2017-09-20 15:00:00-05:00
 layout: post
 slug: crio-workflow
 title: Ghost Riding The Whip -- A complete Kubernetes workflow without Docker, using CRI-O, Buildah & kpod

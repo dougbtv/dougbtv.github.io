@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-30 17:02:04-05:00
+date: 2017-05-30 17:02:05-05:00
 layout: post
 slug: vnf-asterisk-kubernetes
 title: VNFs in Kubernetes? Sure thing, here's vnf-asterisk!
@@ -152,6 +152,12 @@ homer-podspec.yml.j2  podspec.yml.j2
 
 You'll see two resource definition files in there. They're `.j2` jinja2 files, but, ignore that, there's no templating in them now. You could also run the ansible playbooks to template these onto the machine (really handy for development of the vnf-asterisk application), but, it's enough steps to make it easier to just clone this.
 
+Before we launch these, we're going to make sure they can't be run on our master node. So let's do that.
+
+```
+[centos@kube-master templates]$ kubectl taint nodes kube-master key=value:NoSchedule
+```
+
 We're going to go ahead and create everything given those, so run yourself `kubectl` with those two files.
 
 ```
@@ -163,18 +169,26 @@ Watch everything while it comes up -- it's going to pull A LOT OF IMAGE FILES. A
 I watch it come up with:
 
 ```
-[centos@kube-master templates]$ watch -n1 kubectl get pods
+[centos@kube-master templates]$ watch -n1 kubectl get pods -o wide
+```
+
+I use that a lot, so I add an alias, which you can do too if you want to do something cute, the [beholder](http://media-dominaria.cursecdn.com/attachments/40/601/635032482029970697.jpg).
+
+```
+[centos@kube-master templates]$ alias beholder="watch -n1 kubectl get pods -o wide"
 ```
 
 ### Trouble shooting that deploy
 
 If everything is coming up in `kubectl get pods` with a status of `Running` -- you're good to go!
 
-If you've been toying around with the persistent volumes from my lab, and you see pods failing you might need to recreate them, I had to do `kubectl delete -f ~/glusterfs-volumes.yaml` and then `kubectl create -f ~/glusterfs-volumes.yaml`. 
-
 Also generally, double check -- is something still pulling for an image? It could be, and it takes a long time. So, double check that.
 
 Otherwise, you can do the usual where you do `kubectl get pods` and for a particular pod that's not in a running state, do a `kubectl describe pod somepod-1550262015-x6v8b`.
+
+More outdated, but, I used to have some trouble with the PVCs (persistent volume claims) with my old lab instructions for GlusterFS persistent, and I had previously written:
+
+> If you've been toying around with the persistent volumes from my lab, and you see pods failing you might need to recreate them, I had to do `kubectl delete -f ~/glusterfs-volumes.yaml` and then `kubectl create -f ~/glusterfs-volumes.yaml`. 
 
 ## Checking out the running pieces.
 
@@ -256,7 +270,68 @@ You can also bring up an interactive prompt too if you wish.
 asterisk-2725520970-w5mnj*CLI> 
 ```
 
-## Bring it up in browser! Create the tunnels for the lab machines in VMs (Optional)
+## Choose your own Adventure: Bridged Network VMs or NAT'ed VM's
+
+So -- are your VMs NAT'ed or Bridged? If you're using kube-centos-ansible, the default these days is to have bridged VMs, but, you can also choose NAT'd. 
+
+You'll know by the IP address of your VMs, heck -- if you got this far, there's a good chance you know already, but, if you have `192.168.122.0/24` addresses, those are likely behind a NAT. If the VMs appear on your LAN IP addresses, then, those are bridged to your LAN. 
+
+## Bridged VMs: Set up routing and DNS on your client machine
+
+Skip down to the next section if you have NAT'ed VMs.
+
+Alright, what we're going to do here is expose a few of our services.
+
+Firstly, pick up your IP address. You might need to modify it if you have a different address range for the IP address on the master for which we'll expose the services.
+
+```
+[centos@kube-master k8s]$ ipaddr=$(ip a | grep 192 | awk '{print $2}' | perl -pe 's|/.+||')
+[centos@kube-master templates]$ echo $ipaddr
+192.168.1.6
+```
+
+Now, we can expose that service, so we'll expose a new service based on what we have. Let's do this for the controller first.
+
+```
+[centos@kube-master templates]$ kubectl expose svc controller --external-ip $ipaddr --name external-controller
+```
+
+Now, we can see in the list that we've create a new service based on the existing service that also now has an `EXTERNAL-IP`
+
+```
+[centos@kube-master templates]$ kubectl get svc | grep -P "NAME|controller"
+NAME                                     CLUSTER-IP       EXTERNAL-IP   PORT(S)             AGE
+controller                               10.103.253.13    <none>        8001/TCP            1m
+external-controller                      10.109.185.147   192.168.1.6   8001/TCP            32s
+```
+
+Now, from our client machine, we should be able to curl that service. So let's try it from our laptops/desktops. If you are able to curl it from a Commodore 64 -- I will personalize an animated GIF honoring you. But, for now, my Fedora workstation will have to do!
+
+```
+[doug@yoda vnf-asterisk]$ curl $ipaddr:8001/foo && echo
+[{"text":"this and that"},{"text":"the other thing"},{"text":"final"}]
+```
+
+Hurray!
+
+Ok, cool, let's do that for a few more items.
+
+```
+$ kubectl expose svc webapp --external-ip $ipaddr --target-port=80 --name external-webapp
+$ kubectl expose svc vnfui --external-ip $ipaddr --name external-vnfui
+```
+
+Why is the `external-webapp` svc different than the others? In this case, when basing it on the service, it doesn't know how to choose a target port if it differs from the exposed port. So, we have to specify that this points to port 80 inside the container.
+
+Alright -- this being the case, you can now bring this up in a browser! 
+
+Browse to `http://$ipaddr` where `$ipaddr` is the one from the above output (should that have been fitting.)
+
+If you hit the green button that says "Discovered Instaces" -- you should see a list of one item.
+
+(Now, skip the NAT'ed section for you, and head down to scale it up)
+
+## NAT'ed VMs: Bring it up in browser and Create the tunnels for the lab machines in VMs
 
 If your lab is like mine (e.g. You've used my lab playbooks to create VMs on a virt host to run a Kubernetes cluster), the VMs running Kubernetes are walled off inside their own network. So you'll have to create some tunnels in. This is... Less than convenient. Given this is a lab, it doesn't have great network facilities for ingress. So, it's fairly manual, sorry about that. Personally I'm frustrated with this, so my apologies are sincere. Maybe another blog article coming in the future for making the networking scenario a bit more user-friendly to access these services from afar.
 
@@ -318,18 +393,19 @@ You'll note that we're doing a bunch manually here. This could all theoretically
 First thing we can do here is check out the [deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#scaling-a-deployment) that was specified in our yaml resource definitions. 
 
 ```
-[centos@kube-master ~]$ kubectl describe deployment asterisk | grep -P "^Replicas"
-Replicas:       1 desired | 1 updated | 1 total | 1 available | 0 unavailable
+[centos@kube-master templates]$ kubectl get deployment asterisk
+NAME       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+asterisk   1         1         1            1           8m
 ```
 
 This shows us that our deployment requested a single instance, and 1 is up. So let's scale that up to two instances.
 
 ```
-[centos@kube-master ~]$ kubectl scale deployment asterisk --replicas 2
+[centzos@kube-master ~]$ kubectl scale deployment asterisk --replicas 2
 deployment "asterisk" scaled
 ```
 
-Now check out our `kubectl describe` again.
+Now check out our `kubectl get deployment` again.
 
 ```
 [centos@kube-master ~]$ kubectl describe deployment asterisk | grep -P "^Replicas"
@@ -356,7 +432,7 @@ These instances have a entrypoint script which announces their presence to etcd 
 So, let's go ahead and call the controller's `/discover` endpoint. 
 
 ```
-[centos@kube-master ~]$ [centos@kube-master ~]$ curl -s controller.default.svc.cluster.local:8001/discover | python -m json.tool
+[centos@kube-master ~]$ curl -s controller.default.svc.cluster.local:8001/discover | python -m json.tool
 [
     {
         "ip": "10.244.3.20",
@@ -541,7 +617,7 @@ There it is!
 
 And if you are able to, we can also bring that up in the UI.
 
-If you have my lab setup, bring up `http://localhost:8080` and then use username "admin" password "test123". 
+If you have my lab setup, bring up `http://localhost:8080` (or specific IP if you use NAT) and then use username "admin" password "test123". 
 
 Click the "clock icon" in the upper right hand corner, and select say "Last 24 hours" then hit the search button (window pane under the nav towards the left).
 

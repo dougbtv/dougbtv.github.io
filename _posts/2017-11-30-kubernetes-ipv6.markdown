@@ -8,27 +8,30 @@ title: Are you exhausted? IPv4 almost is -- let's setup an IPv6 lab for Kubernet
 category: nfvpe
 ---
 
-As we all know, there's the inevitability that [IPv4 is becoming exhausted](https://en.wikipedia.org/wiki/IPv4_address_exhaustion). And it's not just tired (ba-dum-ching!). Since we're a bunch of Kubernetes fans, and we're networking fans -- we really want to check out what we can do with IPv6 with Kubernetes. Thanks to some slinky automation by my collegue [Feng Pan](https://github.com/fepan) contributed to [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) and some creative work by [leblancd](https://github.com/leblancd). In this simple setup today, we're going to deploy Kubernetes with custom binaries from leblancd and have two pods (ideally on different nodes) ping one another with `ping6` and declare victory! In the future let's hope to iterate on what's necessary to get IPv6 functionality in Kubernetes.
+It's no secret that there's the inevitability that [IPv4 is becoming exhausted](https://en.wikipedia.org/wiki/IPv4_address_exhaustion). And it's not just tired (ba-dum-ching!). Since we're a bunch of Kubernetes fans, and we're networking fans -- we really want to check out what we can do with IPv6 with Kubernetes. Thanks to some slinky automation by my collegue, [Feng Pan](https://github.com/fepan), contributed to [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible). He was able to implement some creative work by [leblancd](https://github.com/leblancd). In this simple setup today, we're going to deploy Kubernetes with custom binaries from leblancd and have two pods (ideally on different nodes) ping one another with `ping6` and declare victory! In the future let's hope to iterate on what's necessary to get IPv6 functionality in Kubernetes.
 
-We're not the only people interested in IPv6 for Kubernetes. There's a solid effort by the good folks from the [Kubernetes SIG-Network](https://github.com/kubernetes/community/wiki/SIG-Network). You'll find in the [SIG-Network features spreadsheet](https://docs.google.com/spreadsheets/d/1lHSZBl7YJvKN0qNT8i0oxYaRh38CcemJlUFjD37hhDU/edit#gid=14624465) that IPv6 is slated for the next release, e.g. 1.9.1. Additionally, you can find some more information about the [issues tagged for IPv6 up on the k/k GitHub](https://github.com/kubernetes/kubernetes/pulls?q=is%3Aopen+is%3Apr+label%3Aarea%2Fipv6), too.
+There's an ever growing interest in IPv6 for Kubernetes. There's a solid effort by the good folks from the [Kubernetes SIG-Network](https://github.com/kubernetes/community/wiki/SIG-Network). You'll find in the [SIG-Network features spreadsheet](https://docs.google.com/spreadsheets/d/1lHSZBl7YJvKN0qNT8i0oxYaRh38CcemJlUFjD37hhDU/edit#gid=14624465) that IPv6 is slated for the next release, e.g. 1.9. There's probably more to that  Additionally, you can find some more information about the [issues tagged for IPv6 up on the k/k GitHub](https://github.com/kubernetes/kubernetes/pulls?q=is%3Aopen+is%3Apr+label%3Aarea%2Fipv6), too.
 
-In part this document assumes some other familiarity with these Ansible playbooks. In theory you should be able to spin up just an IPv6 lab without otherwise having experience with this playbook. However, some of the terminology may be glossed over. We often use the term "virthost" -- by which we mean a host that runs virtual machines. This technique is used often by the developers of this project in order to quickly iterate on these playbooks. These instructions assume using a virthost, however, it's likely you could complete a deployment on baremetal, or on an IaaS.
+In part this post assumes some other familiarity with these Ansible playbooks. In theory you should be able to spin up just an IPv6 lab without otherwise having experience with this playbook. However, some of the terminology may be glossed over. We often use the term "virthost" -- by which we mean a host that runs virtual machines. This technique is used often by the developers of this project in order to quickly iterate on these playbooks. These instructions assume using a virthost, however, it's likely you could complete a deployment on baremetal, or on an IaaS.
 
+There's also a [README for creating an IPv6 lab with kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible/blob/master/docs/ipv6.md) on GitHub.
 
 ## Limitations
 
-Currently, this setup makes it possible to `ping6` one pod from another. We look forward to using this laboratory to explore the other possibilities and scenarios herein, however this pod-to-pod `ping6` is the baseline functionality from which to start.
+Our goal here with this setup is to make it possible to `ping6` one pod from another. I'm looking forward to using this laboratory to explore the other possibilities and scenarios, however this pod-to-pod `ping6` is the baseline functionality from which to start adventuring into further territory.
 
 ## Requirements
 
-To run these playbooks, it's assumed that you have:
+TL;DR: A host that can run VMs (or choose your own adventure and bring your baremetal or some other cloud), an editor (anything but Emacs, just kidding), git and Ansible.
+
+To run these playbooks, we assume you have already adventured [warily](https://scryfall.com/card/tsp/171) so far that you have:
 
 * A machine for running Ansible (like your workstation) and [have Ansible installed](http://docs.ansible.com/ansible/latest/intro_installation.html).
 * Ansible 2.4 or later (necessary to support `get_url` with IPv6 enabled machines)
 * A host capable of running virtual machines, and is running CentOS 7.
-* A clone of this repository.
+* Git. If you don't have git, get git. Don't be a git. We'll clone up in a minute here.
 
-This scenario disables the "bridged networking" feature we often use and instead uses NAT'ed libvirt virtual machines. 
+We also disable the "bridged networking" feature we often use and instead uses NAT'ed libvirt virtual machines. 
 
 You may have to disable GRO ([generic receive offload](https://en.wikipedia.org/wiki/Large_receive_offload)) for the NICs on the virtualization host (if you're using one).
 
@@ -40,13 +43,23 @@ ethtool -K em3 gro off
 
 ## Fire up your terminal, and let's clone this repo!
 
-You're going to need to clone 
+You're going to need to clone up this repo, let's clone at the latest tag that supports this functionality.
+
+```
+$ git clone --branch v0.1.6 https://github.com/redhat-nfvpe/kube-centos-ansible.git
+```
+
+Cool, enter the dir and surf around if you wish, we'll setup our inventory and necessary variables.
+
+### If you clone master instead of that tag, don't forget to install the galaxy roles!
+
+There's likely some [Ansible Galaxy](https://galaxy.ansible.com/) roles to install, if `find . | grep -i require` shows any files, do a `ansible-galaxy install -r requirements.yml`.
 
 ## Inventory and variable setup
 
-Firstly, let's look at an inventory and variable overrides to use.
+Let's look at an inventory and variable overrides to use. Make sure you have a host setup you can run VMs on, that's running CentOS 7, and ensure you can SSH to it.
 
-Here's the initially used inventory, which only really cares about the `virthost`. These examples place the inventory file @ `inventory/your.virthost.inventory`. You'll need to modify the location of the host to match your environment.
+Here's the initially used inventory, which only really cares about the `virthost`. Here I'm placing this inventory file @ `inventory/my.virthost.inventory`. You'll need to modify the location of the host to match your environment.
 
 ```
 the_virthost ansible_host=192.168.1.119 ansible_ssh_user=root
@@ -55,7 +68,7 @@ the_virthost ansible_host=192.168.1.119 ansible_ssh_user=root
 the_virthost
 ```
 
-And the overrides which are based on the examples @ `./inventory/examples/virthost/virthost-ipv6.inventory.yml`. In these examples this set of extra variables was created @ `./inventory/extravars.yml` (you may otherwise place it and use it in another fashion should you please):
+And the overrides which are based on the examples @ `./inventory/examples/virthost/virthost-ipv6.inventory.yml`. I'm creating this set of extra variables @ `./inventory/extravars.yml` :
 
 ```
 bridge_networking: false
@@ -74,13 +87,13 @@ ipv6_enabled: true
 
 ## Spinning up and access virtual machines
 
-Perform a run of the `virthost-setup.yml` playbook, using the previously mentioned extra variables for override, and an inventory which references the 
+Perform a run of the `virthost-setup.yml` playbook, using the previously mentioned extra variables for override, and an inventory which references the virthost.
 
 ```
-ansible-playbook -i inventory/your.virthost.inventory -e "@./inventory/extravars.yml" virthost-setup.yml
+ansible-playbook -i inventory/my.virthost.inventory -e "@./inventory/extravars.yml" virthost-setup.yml
 ```
 
-This will produce an inventory file in the local clone of this repo @ `./inventory/vms.local.generated`.
+This will produce an inventory file in the local clone of this repo @ `./inventory/vms.local.generated`. And it will also create some SSH keys for you which you'll find in the `.ssh` folder of the user you ran the Ansible playbooks as.
 
 In the case that you're running Ansible from your workstation, and your virthost is another machine, you may need to SSH jump host from the virthost to the virtual machines.
 
@@ -119,7 +132,9 @@ With the above in place, we can now perform a kube install, and use the locally 
 ansible-playbook -i inventory/vms.local.generated -e "@./inventory/extravars.yml" kube-install.yml
 ```
 
-You now should SSH to the master, and if you please, check out the status of the cluster with `kubectl get nodes` and/or `kubectl cluster-info`.
+SSH into the master, if you created it above, use the handy `jumphost.sh`.
+
+Just double check things are [coming up Milhouse](https://www.youtube.com/watch?v=M67E9mpwBpM) Check out the status of the cluster with `kubectl get nodes` and/or `kubectl cluster-info`.
 
 We'll now create a couple pods via a ReplicationController. Create a YAML resource definition like so:
 
@@ -153,11 +168,13 @@ Create the pods with `kubectl` by issuing:
 $ kubectl create -f debug.yaml
 ```
 
-You may then wish to watch the pods come up:
+Watch 'em come up:
 
 ```
 [centos@kube-master ~]$ watch -n1 kubectl get pods -o wide
 ```
+
+## Try it out!
 
 Once those pods are fully running, list them, and take a look at the IP addresses, like so:
 
@@ -168,7 +185,7 @@ debugging-cvbb2   1/1       Running   0          4m        fd00:101::2   kube-no
 debugging-gw8xt   1/1       Running   0          4m        fd00:102::2   kube-node-2
 ```
 
-Now you can exec commands in one of them, to ping the other:
+Now you can exec commands in one of them, to ping the other (note that your pod names and IPv6 addresses are likely to differ):
 
 ```
 [centos@kube-master ~]$ kubectl exec -it debugging-cvbb2 -- /bin/bash -c 'ping6 -c5 fd00:102::2'

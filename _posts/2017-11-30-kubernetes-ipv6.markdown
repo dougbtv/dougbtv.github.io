@@ -12,8 +12,6 @@ It's no secret that there's the inevitability that [IPv4 is becoming exhausted](
 
 There's an ever growing interest in IPv6 for Kubernetes. There's a solid effort by the good folks from the [Kubernetes SIG-Network](https://github.com/kubernetes/community/wiki/SIG-Network). You'll find in the [SIG-Network features spreadsheet](https://docs.google.com/spreadsheets/d/1lHSZBl7YJvKN0qNT8i0oxYaRh38CcemJlUFjD37hhDU/edit#gid=14624465) that IPv6 is slated for the next release. There's probably more to that  Additionally, you can find some more information about the [issues tagged for IPv6 up on the k/k GitHub](https://github.com/kubernetes/kubernetes/pulls?q=is%3Aopen+is%3Apr+label%3Aarea%2Fipv6), too.
 
-In part this post assumes some other familiarity with these Ansible playbooks. In theory you should be able to spin up just an IPv6 lab without otherwise having experience with this playbook. However, some of the terminology may be glossed over. We often use the term "virthost" -- by which we mean a host that runs virtual machines. This technique is used often by the developers of this project in order to quickly iterate on these playbooks. These instructions assume using a virthost, however, it's likely you could complete a deployment on baremetal, or on an IaaS.
-
 There's also a [README for creating an IPv6 lab with kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible/blob/master/docs/ipv6.md) on GitHub.
 
 ## Limitations

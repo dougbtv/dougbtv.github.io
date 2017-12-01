@@ -1,14 +1,14 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-11-30 13:40:00-05:00
+date: 2017-11-30 13:40:01-05:00
 layout: post
 slug: kubernetes-ipv6
 title: Are you exhausted? IPv4 almost is -- let's setup an IPv6 lab for Kubernetes
 category: nfvpe
 ---
 
-It's no secret that there's the inevitability that [IPv4 is becoming exhausted](https://en.wikipedia.org/wiki/IPv4_address_exhaustion). And it's not just tired (ba-dum-ching!). Since we're a bunch of Kubernetes fans, and we're networking fans -- we really want to check out what we can do with IPv6 with Kubernetes. Thanks to some slinky automation by my collegue, [Feng Pan](https://github.com/fepan), contributed to [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible). He was able to implement some creative work by [leblancd](https://github.com/leblancd). In this simple setup today, we're going to deploy Kubernetes with custom binaries from leblancd and have two pods (ideally on different nodes) ping one another with `ping6` and declare victory! In the future let's hope to iterate on what's necessary to get IPv6 functionality in Kubernetes.
+It's no secret that there's the inevitability that [IPv4 is becoming exhausted](https://en.wikipedia.org/wiki/IPv4_address_exhaustion). And it's not just tired (ba-dum-ching!). Since we're a bunch of Kubernetes fans, and we're networking fans -- we really want to check out what we can do with IPv6 with Kubernetes. Thanks to some slinky automation by my colleague, [Feng Pan](https://github.com/fepan), contributed to [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible). He was able to implement some creative work by [leblancd](https://github.com/leblancd). In this simple setup today, we're going to deploy Kubernetes with custom binaries from leblancd and have two pods (ideally on different nodes) ping one another with `ping6` and declare victory! In the future let's hope to iterate on what's necessary to get IPv6 functionality in Kubernetes.
 
 There's an ever growing interest in IPv6 for Kubernetes. There's a solid effort by the good folks from the [Kubernetes SIG-Network](https://github.com/kubernetes/community/wiki/SIG-Network). You'll find in the [SIG-Network features spreadsheet](https://docs.google.com/spreadsheets/d/1lHSZBl7YJvKN0qNT8i0oxYaRh38CcemJlUFjD37hhDU/edit#gid=14624465) that IPv6 is slated for the next release, e.g. 1.9. There's probably more to that  Additionally, you can find some more information about the [issues tagged for IPv6 up on the k/k GitHub](https://github.com/kubernetes/kubernetes/pulls?q=is%3Aopen+is%3Apr+label%3Aarea%2Fipv6), too.
 

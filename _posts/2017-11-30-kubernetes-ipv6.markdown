@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-11-30 13:40:01-05:00
+date: 2017-11-30 13:40:02-05:00
 layout: post
 slug: kubernetes-ipv6
 title: Are you exhausted? IPv4 almost is -- let's setup an IPv6 lab for Kubernetes

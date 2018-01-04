@@ -24,7 +24,7 @@ If you want to read more about exactly what the default scheduler in Kubernetes 
 
 ## Requirements
 
-Simply have a Kubernetes 1.7 up and running for you. 1.6 might work, too. If you don't have  Kube running, may I suggest that you use my [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) playbooks, and follow my article about [installing a kube cluster on centos](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) (ignore that it says kube 1.5 -- same steps will produce a 1.7 cluster).
+Simply have a Kubernetes 1.7 up and running for you. 1.6 might work, too. If you don't have  Kube running, may I suggest that you use my [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible) playbooks, and follow my article about [installing a kube cluster on centos](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) (ignore that it says kube 1.5 -- same steps will produce a 1.7 cluster).
 
 Also, I use an all-CentOS 7 lab environment, and while it might not be required, note that it colors the ancillary tools and viewpoint from which I create this tutorial.
 

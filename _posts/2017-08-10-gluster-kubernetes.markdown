@@ -8,7 +8,7 @@ title: Be a hyper spaz about a hyperconverged GlusterFS setup with dynamically p
 category: nfvpe
 ---
 
-I'd recently brought up my [GlusterFS for persistent volumes in Kubernetes setup](http://dougbtv.com/nfvpe/2017/04/05/glusterfs-persistent/) and I was noticing something errant. I had to REALLY baby the persistent volumes. That didn't sit right with me, so I refactored the setup to use [gluster-kubernetes](https://github.com/gluster/gluster-kubernetes) to hook up a hyperconverged setup. This setup improves on the previous setup by both having the Gluster daemon running in Kubernetes pods, which is just feeling [so fresh and so clean](https://www.youtube.com/watch?v=-JfEJq56IwI). Difference being that OutKast is like smooth and cool -- and I'm [an excited spaz](http://www.dailymotion.com/video/xhl09y) about technology with this. Gluster-Kubernetes also implements [heketi](https://github.com/heketi/heketi) which is an API for GlusterFS volume management -- that Kube can also use to allow us dynamic provisioning. Our goal today is to spin up Kube (using [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible)) with gluster-kubernetes for dynamic provisioning, and then we'll validate it with master-slave replication in MySQL, to one-up our simple MySQL from the last article.
+I'd recently brought up my [GlusterFS for persistent volumes in Kubernetes setup](http://dougbtv.com/nfvpe/2017/04/05/glusterfs-persistent/) and I was noticing something errant. I had to REALLY baby the persistent volumes. That didn't sit right with me, so I refactored the setup to use [gluster-kubernetes](https://github.com/gluster/gluster-kubernetes) to hook up a hyperconverged setup. This setup improves on the previous setup by both having the Gluster daemon running in Kubernetes pods, which is just feeling [so fresh and so clean](https://www.youtube.com/watch?v=-JfEJq56IwI). Difference being that OutKast is like smooth and cool -- and I'm [an excited spaz](http://www.dailymotion.com/video/xhl09y) about technology with this. Gluster-Kubernetes also implements [heketi](https://github.com/heketi/heketi) which is an API for GlusterFS volume management -- that Kube can also use to allow us dynamic provisioning. Our goal today is to spin up Kube (using [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible)) with gluster-kubernetes for dynamic provisioning, and then we'll validate it with master-slave replication in MySQL, to one-up our simple MySQL from the last article.
 
 If you're not familiar with persistent volumes in Kubernetes, or some of the basics of why GlusterFS is pretty darn cool -- give my [previous article](http://dougbtv.com/nfvpe/2017/04/05/glusterfs-persistent/) a read for those basics. But, come back here for the setup.
 
@@ -16,9 +16,9 @@ The bulk of the work I was able to do here was thanks to the [gluster-kubernetes
 
 ## Requirements
 
-In short, I recommend my usual setup which is a single CentOS 7 machine you can run VMs on. That's what I typically use with kube-centos-ansible. You're going to need approximately 100 gigs of disk. You'll run 4 virtual machines (one master and 4 minions). I personally use 2 vCPUs per VM, you'd likely get away with one. 
+In short, I recommend my usual setup which is a single CentOS 7 machine you can run VMs on. That's what I typically use with kube-ansible. You're going to need approximately 100 gigs of disk. You'll run 4 virtual machines (one master and 4 minions). I personally use 2 vCPUs per VM, you'd likely get away with one. 
 
-Otherwise, you can also use this on baremetal, just skip the VM portion of kube-centos-ansible. The tricky part is the that kube-centos-ansible currently only supports a single disk for this setup, and it'd need to be the same name on all baremetal hosts. If you do give it a go, just change the name of the disk in the `spare_disk_dev` in the `./group_vars/all.yml` in your kube-centos-ansible clone. And, you'll need some disks that are free-and-clear of data, and not mounted on your machines. kube-centos-ansible can set this up for you in VMs. I'm also happy to take some pull requests to improve how this works against baremetal!
+Otherwise, you can also use this on baremetal, just skip the VM portion of kube-ansible. The tricky part is the that kube-ansible currently only supports a single disk for this setup, and it'd need to be the same name on all baremetal hosts. If you do give it a go, just change the name of the disk in the `spare_disk_dev` in the `./group_vars/all.yml` in your kube-ansible clone. And, you'll need some disks that are free-and-clear of data, and not mounted on your machines. kube-ansible can set this up for you in VMs. I'm also happy to take some pull requests to improve how this works against baremetal!
 
 Also, as per usual, I assume a CentOS 7 distro on all nodes. And while you might be able to do this with other distros that it colors how I approach this and what ancillary tools I select.
 
@@ -40,12 +40,12 @@ It should be noted however that the `gk-deploy` tool also supports using an exis
 
 ## Kubernetes Installation (the hard part)
 
-I'll give a quick review of [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible). If you want [a more thorough tutorial](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) check out my article on using it. The most difficult part is just modifying the inventory, and that's not even that tough. Remember the gist here is that we have a single host that can run virtual machines (which we call the "virthost", and this playbook has the setup for running those), and then we run virtual machines on which we run Kubernetes (generally for laboratory analysis, in my own case).
+I'll give a quick review of [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible). If you want [a more thorough tutorial](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) check out my article on using it. The most difficult part is just modifying the inventory, and that's not even that tough. Remember the gist here is that we have a single host that can run virtual machines (which we call the "virthost", and this playbook has the setup for running those), and then we run virtual machines on which we run Kubernetes (generally for laboratory analysis, in my own case).
 
-Clone up the kube-centos-ansible repo (at a particular tag that has the kube-glusterfs):
+Clone up the kube-ansible repo (at a particular tag that has the kube-glusterfs):
 
 ```
-$ git clone --branch v0.1.0 https://github.com/redhat-nfvpe/kube-centos-ansible.git && cd kube-centos-ansible
+$ git clone --branch v0.1.0 https://github.com/redhat-nfvpe/kube-ansible.git && cd kube-ansible
 ```
 
 Now go and do the hardest part. Modify the inventories. Modify `./inventory/virthost.inventory` to your main CentOS machine to run virtual machines on. Add a vars section to the bottom of it:

@@ -351,7 +351,7 @@ $ cd _output/release-tars/
 $ cp kubernetes.tar.gz /tmp/
 ```
 
-And I'm in the `./cluster/centos` and doing `./build.sh` -- failed. So I started reading about it, and it points at [this old doc for a centos cluster](http://kubernetes.github.io/docs/getting-started-guides/centos/centos_manual_config/) which then says "Oh yeah, that's deprecated." and then pointed to the [contemporary kubeadm install method](https://kubernetes.io/docs/getting-started-guides/kubeadm/) (which I've been using in kube-centos-ansible).
+And I'm in the `./cluster/centos` and doing `./build.sh` -- failed. So I started reading about it, and it points at [this old doc for a centos cluster](http://kubernetes.github.io/docs/getting-started-guides/centos/centos_manual_config/) which then says "Oh yeah, that's deprecated." and then pointed to the [contemporary kubeadm install method](https://kubernetes.io/docs/getting-started-guides/kubeadm/) (which I've been using in kube-ansible).
 
 ### So, how are we going to install it so we can use it?
 
@@ -359,7 +359,7 @@ Kubernetes isn't terribly bad to deal with regarding deps, why? Golang. Makes it
 
 So let's see how a rpm install looks after all, we'll use that as our basis for installing and configuring kube.
 
-Usually in kube-centos-ansible, I install these rpms
+Usually in kube-ansible, I install these rpms
 
 ```
 - kubelet

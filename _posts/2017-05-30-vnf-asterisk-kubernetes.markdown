@@ -34,7 +34,7 @@ Additionally, you need git (and probably your favorite text editor) on the maste
 
 But if that seems overwhelming? Don't let it be! I've got you covered with these two labs that will get you up and running. All you really need is a machine to use as a virtual machine host, and Ansible installed.
 
-* First use my [kubernetes on CentOS lab](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) which uses my [kube-centos-ansible playbooks](https://github.com/redhat-nfvpe/kube-centos-ansible)
+* First use my [kubernetes on CentOS lab](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) which uses my [kube-ansible playbooks](https://github.com/redhat-nfvpe/kube-ansible)
 * Then, add to it my lab on [glusterFS for backing persistent volume stores on Kubernetes](http://dougbtv.com//nfvpe/2017/08/10/gluster-kubernetes/)
 
 Naturally, if you have another avenue to achieve the same, then go for it!
@@ -272,7 +272,7 @@ asterisk-2725520970-w5mnj*CLI>
 
 ## Choose your own Adventure: Bridged Network VMs or NAT'ed VM's
 
-So -- are your VMs NAT'ed or Bridged? If you're using kube-centos-ansible, the default these days is to have bridged VMs, but, you can also choose NAT'd. 
+So -- are your VMs NAT'ed or Bridged? If you're using kube-ansible, the default these days is to have bridged VMs, but, you can also choose NAT'd. 
 
 You'll know by the IP address of your VMs, heck -- if you got this far, there's a good chance you know already, but, if you have `192.168.122.0/24` addresses, those are likely behind a NAT. If the VMs appear on your LAN IP addresses, then, those are bridged to your LAN. 
 

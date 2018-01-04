@@ -12,7 +12,7 @@ Sometimes you wind up patching together your pieces in Kubernetes with a bunch o
 
 For some general info -- Istio was [just announced may 24th, in blog article by Istio](https://istio.io/blog/istio-service-mesh-for-microservices.html). Kubernetes.io published [this article on istio](http://blog.kubernetes.io/2017/05/managing-microservices-with-istio-service-mesh.html) as well. 
 
-I got a great head start from this [up-and-running video on YouTube](https://www.youtube.com/watch?v=ePwd5bK2Cuo) by [Lachlan Evenson](https://twitter.com/LachlanEvenson). He's using Kube 1.6.4 and that's what we have today using my kube-centos-ansible, which tracks beta / unstable. He's put together [these helm charts](https://github.com/kubernetes/charts/tree/master/incubator/istio) for Istio which are a boon for us, thanks Lachlan!
+I got a great head start from this [up-and-running video on YouTube](https://www.youtube.com/watch?v=ePwd5bK2Cuo) by [Lachlan Evenson](https://twitter.com/LachlanEvenson). He's using Kube 1.6.4 and that's what we have today using my kube-ansible, which tracks beta / unstable. He's put together [these helm charts](https://github.com/kubernetes/charts/tree/master/incubator/istio) for Istio which are a boon for us, thanks Lachlan!
 
 ## Requirements
 

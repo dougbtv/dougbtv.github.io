@@ -14,7 +14,7 @@ Not familiar with Multus CNI? The short version is that it's (in my own words) a
 
 Have an older Kubernetes? At the time of writing Kubernetes 1.9.0 was hot off the presses. So CRDs are well established, but if you have an older edition Multus also supports "TPRs" -- third party resources, which were an earlier incantation of what is now CRDs. You'll have to modify for those to work, but, this might be a fair reference point.
 
-A lot of what I learned here is directly from the [Multus CNI readme](https://github.com/Intel-Corp/multus-cni). Mostly I have just automated it with kube-centos-ansible, and then documented up my way of doing it. Make sure to check out what's in the official readme to further extend your knowledge of what you can do with Multus.
+A lot of what I learned here is directly from the [Multus CNI readme](https://github.com/Intel-Corp/multus-cni). Mostly I have just automated it with kube-ansible, and then documented up my way of doing it. Make sure to check out what's in the official readme to further extend your knowledge of what you can do with Multus.
 
 In short, what's cool about this?
 
@@ -34,16 +34,16 @@ TL;DR:
 * Some [really good coffee](http://www.vermontcoffeecompany.com/buy_vermont_organic_fair_trade_coffee.html).
   - Tea is also a fair substitute, but, if herbal -- it must be a rooibos.
 
-This tutorial will use [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible), which is an Ansible playbook that I reference often in this blog, but, it's a way to spin up a Kubernetes cluster (on CentOS) with vanilla kubernetes in order to create a Kubernetes development cluster for yourself quickly, and including some scenarios.
+This tutorial will use [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible), which is an Ansible playbook that I reference often in this blog, but, it's a way to spin up a Kubernetes cluster (on CentOS) with vanilla kubernetes in order to create a Kubernetes development cluster for yourself quickly, and including some scenarios.
 
 In this case we're going to spin up a couple virtual machines and deploy to those. You don't need a high powered machine for this, just enough to get a couple light VMs to use for our experiment.
 
 ## Get your clone on.
 
-Go ahead and clone kube-centos-ansible, and move into its directory.
+Go ahead and clone kube-ansible, and move into its directory.
 
 ```
-$ git clone -b v0.1.8 git@github.com:redhat-nfvpe/kube-centos-ansible.git && cd kube-centos-ansible/
+$ git clone -b v0.1.8 git@github.com:redhat-nfvpe/kube-ansible.git && cd kube-ansible/
 ```
 
 Install the required galaxy roles for the project.
@@ -375,4 +375,4 @@ And I can see that there's now multiple interfaces -- loopback, flannel, and mac
 
 Here you can see it shows both the `10.` network for flannel (net0), and the `192.168.1.0/24` network for the macvlan plugin (eth0).
 
-Thanks for giving it a try! If you run into any issues, make sure to post 'em on the issues for the [kube-centos-ansible github](https://github.com/redhat-nfvpe/kube-centos-ansible), or, if they're multus specific (and not setup specific) to [Multus CNI](https://github.com/Intel-Corp/multus-cni) repo.
+Thanks for giving it a try! If you run into any issues, make sure to post 'em on the issues for the [kube-ansible github](https://github.com/redhat-nfvpe/kube-ansible), or, if they're multus specific (and not setup specific) to [Multus CNI](https://github.com/Intel-Corp/multus-cni) repo.

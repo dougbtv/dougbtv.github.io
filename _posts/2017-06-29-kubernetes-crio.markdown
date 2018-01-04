@@ -12,7 +12,7 @@ This isn't just a stunt like riding a bike with no hands -- it's probably the fu
 
 We're not going to have much luck with building and managing images. In a coming eposide we'll add [Buildah](https://github.com/projectatomic/buildah) into the mix, a project out of Project Atomic which can build OCI images. Then we can expand to having a whole workflow without Docker. But today, I promise that you won't do a single `docker {run,build,ps}`, not a one.
 
-I saw [this tweet](https://twitter.com/soltysh/status/870534766914920448) from [@soltysh](https://twitter.com/soltysh) on Twitter which linked me to the [cri-o ansible](https://github.com/cri-o/cri-o-ansible) playbook which inspired me to implement the same concept in my [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) playbooks. Inspired is the wrong word -- more like made me ultra giddy to give it a try. 
+I saw [this tweet](https://twitter.com/soltysh/status/870534766914920448) from [@soltysh](https://twitter.com/soltysh) on Twitter which linked me to the [cri-o ansible](https://github.com/cri-o/cri-o-ansible) playbook which inspired me to implement the same concept in my [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible) playbooks. Inspired is the wrong word -- more like made me ultra giddy to give it a try. 
 
 Here's the thing, editorially -- I love Docker^hMoby, and I am a firm believer that what Docker did was change the landscape for how we manage and deploy applications. But, it's not wise to have a majority rule of the technology we use. So, I'm really excited for CRI-O. This is a game changer for the whole landscape, and I think the open governance model of CRI-O will be a huge boon for all parties involved (including Docker, too).
 
@@ -20,7 +20,7 @@ You might enjoy enjoy the infamous [Kelsey Hightower's cri-o-tutorial](https://g
 
 ## Requirements
 
-We're going to use [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) -- and this will spin up virtual machines for you if you want. If you don't want -- you could setup physical machines with CentOS 7, and skip on to the part where you modify the inventory for that. We'll basically start from square one here and setup a virtual machine host for you, but, it's up to you if you want that. Should you go with the virt-host method, you'll need to strap that machine with CentOS 7, and give yourself some SSH keys.
+We're going to use [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible) -- and this will spin up virtual machines for you if you want. If you don't want -- you could setup physical machines with CentOS 7, and skip on to the part where you modify the inventory for that. We'll basically start from square one here and setup a virtual machine host for you, but, it's up to you if you want that. Should you go with the virt-host method, you'll need to strap that machine with CentOS 7, and give yourself some SSH keys.
 
 So in short... The main consideration here is to have a machine you can deploy to (which could in theory, be your local machine, it might work with Fedora, and will certainly work with CentOS) -- and you'll need to have [Ansible installed](http://docs.ansible.com/ansible/intro_installation.html) on a machine that can access the machine(s) with SSH. 
 
@@ -28,18 +28,18 @@ So in short... The main consideration here is to have a machine you can deploy t
 
 Honestly, most of this is really easy. The hardest part is managing your inventories and running my playbooks if you're unfamiliar with them. I'll give a recap here of how to do that. 
 
-We're using my [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) playbooks, and if you aren't familiar with them, I recommend you check out my intro [blog article on how to install Kubernetes](http://dougbtv.com//nfvpe/2017/02/16/kubernetes-1.5-centos/) which goes in depth on these playbooks -- I take them for granted sometimes and that will be useful as a reference if I miss something that I took as obvious.
+We're using my [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible) playbooks, and if you aren't familiar with them, I recommend you check out my intro [blog article on how to install Kubernetes](http://dougbtv.com//nfvpe/2017/02/16/kubernetes-1.5-centos/) which goes in depth on these playbooks -- I take them for granted sometimes and that will be useful as a reference if I miss something that I took as obvious.
 
 ## Virtual machine host & spinning up the virtual machines
 
 As I mentioned previously -- skip this section if you already have machine provisioned. Otherwise, get yourself a fresh (or existing should likely be ok) CentOS 7 install where we can run VMs -- so physical is preferable unless, yo dawg, I heard you like nested virtualization.
 
-Alright, first thing's first, let's clone the kube-centos-ansible playbooks. 
+Alright, first thing's first, let's clone the kube-ansible playbooks. 
 
 (note: you're cloning at a specific tag	to reference an	old style inventory, if	you wish you can remove	the `--branch` parameter, and go via head, and figure out the new inventory, just browse the `./inventory` dir)
 
 ```
-$ git clone https://github.com/redhat-nfvpe/kube-centos-ansible.git && cd kube-centos-ansible
+$ git clone https://github.com/redhat-nfvpe/kube-ansible.git && cd kube-ansible
 ```
 
 In there I'm going to have an inventory you should modify, so go ahead and modify this and put in the proper hostname/ip.
@@ -55,7 +55,7 @@ kubehost
 Now that you have that, you should be able to run the `virt-host-setup.yml` playbook. Note that we're specifying 4 gigs of RAM for each virtual machine. GCC was not super happy with just 2 gigs when going to compile CRI-O, so I decided to bump it up a bit (imagine calling 2 gigs of RAM "a bit" in 1995? That would be funny).
 
 ```
-$ ansible-playbook -i inventory/virthost.inventory -e "ram_mb=4096"  virt-host-setup.yml
+$ ansible-playbook -i inventory/virthost.inventory -e "vm_parameters_ram_mb=4096"  virt-host-setup.yml
 ```
 
 Importantly, this will create some ssh keys on that target virtual machine host that you'll want to put on the machine where you're running Ansible.

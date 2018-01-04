@@ -12,11 +12,11 @@ It is my decree that whenever you are using Kubernetes without using Docker you 
 
 I happened to see that [there is a first release candidate of CRI-O](https://medium.com/cri-o/announcing-the-first-cri-o-release-candidate-5a57667bc39d) which has a bunch of great improvements that work towards really getting CRI-O production ready for Kubernetes. And I have to say -- my experience with using it has been nearly flawless. It's been working like a champ, and I can tell they're doing an excellent job with the polish. Of course that's awesome, but, I was most excited to hear about `kpod` -- "the missing tool". When I wrote my [first article about using CRI-O](http://dougbtv.com/nfvpe/2017/06/29/kubernetes-crio/), I was missing a few portions -- especially a half decent tool for checking out what's going on with containers. This tool isn't quite as mature as CRI-O itself, but, the presence of this tool at all is just a straight-up boon.
 
-To get this all going, I have these tools (CRI-O, kpod & buildah) integrated into my vanilla kubernetes lab playbooks, [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible). This playbook has it so we can compile CRI-O (which includes kpod), buildah, and get Kubernetes up and running (which uses kubeadm to initialize and join the pods). I made some upgrades to kube-centos-ansible in the process, fixing up [issues with kube 1.7](https://github.com/redhat-nfvpe/kube-centos-ansible/issues/37), and also improving it so that kube-centos-ansible can also use Fedora. CRI-O itself works wondefully with CentOS, but Buildah needs some kernel functionality that just isn't available in CentOS yet, so... kube-**centos**-ansible now also supports Fedora, oddly or not-so-oddly enough.
+To get this all going, I have these tools (CRI-O, kpod & buildah) integrated into my vanilla kubernetes lab playbooks, [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible). This playbook has it so we can compile CRI-O (which includes kpod), buildah, and get Kubernetes up and running (which uses kubeadm to initialize and join the pods). I made some upgrades to kube-ansible in the process, fixing up [issues with kube 1.7](https://github.com/redhat-nfvpe/kube-ansible/issues/37), and also improving it so that kube-ansible can also use Fedora. CRI-O itself works wondefully with CentOS, but Buildah needs some kernel functionality that just isn't available in CentOS yet, so... kube-**centos**-ansible now also supports Fedora, oddly or not-so-oddly enough.
 
 ## Requirements
 
-This walk-through assumes that you have at least 2 machines with Fedora installed (and generally up-to-date). That's where we'll install Kubernetes with CRI-O (and kpod!). You might notice that we use [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible), the name of which is... Not so apropos. But! It's recently been updated to support Fedora. And we need Fedora to get a spankin' fresh kernel, so we can use... Drum roll please... [Buildah](https://github.com/projectatomic/buildah) -- an image building tool that is not Docker (wink, wink!).
+This walk-through assumes that you have at least 2 machines with Fedora installed (and generally up-to-date). That's where we'll install Kubernetes with CRI-O (and kpod!). You might notice that we use [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible), the name of which is... Not so apropos. But! It's recently been updated to support Fedora. And we need Fedora to get a spankin' fresh kernel, so we can use... Drum roll please... [Buildah](https://github.com/projectatomic/buildah) -- an image building tool that is not Docker (wink, wink!).
 
 Those machines need to have over 2 gigs of RAM. Compilation of CRI-O, specifically during a step with GCC was bombing out on me with GCC complaining it couldn't allocate memory when I had just 2 gigs of RAM. Therefore, I recommend at least 4 gigs of RAM.
 
@@ -32,13 +32,13 @@ TL;DR, you need:
 
 ## Spinning up a Kubernetes cluster with CRI-O (and kpod included!)
 
-First off, go ahead and clone up the [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) project...
+First off, go ahead and clone up the [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible) project...
 
 ```
-git clone --branch v0.1.3 https://github.com/redhat-nfvpe/kube-centos-ansible.git
+git clone --branch v0.1.3 https://github.com/redhat-nfvpe/kube-ansible.git
 ```
 
-This article glosses over the fact that the [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) has the ability to spin-up virtual machines to mock-up Kubernetes clusters. However, if you're familiar with it, you can use it as well. I won't go into depth here, but this is the technique that I use:
+This article glosses over the fact that the [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible) has the ability to spin-up virtual machines to mock-up Kubernetes clusters. However, if you're familiar with it, you can use it as well. I won't go into depth here, but this is the technique that I use:
 
 ```
 $ ansible-playbook -i inventory/your.inventory -e "vm_parameters_ram_mb=4096" virt-host-setup.yml 
@@ -50,7 +50,7 @@ Now we'll a playbook to bootstrap the nodes with Python (as the [Fedora cloud im
 $ ansible-playbook -i inventory/your.inventory fedora-python-bootstrapper.yml
 ```
 
-For your reference here's the inventory I used. This inventory can also be found in the `./inventory/examples/crio/crio.inventory` in the clone. Mostly this is here to show you how to set the variables in order to get this puppy (that is, kube-centos-ansible) to properly use Fedora, when it comes down to it.
+For your reference here's the inventory I used. This inventory can also be found in the `./inventory/examples/crio/crio.inventory` in the clone. Mostly this is here to show you how to set the variables in order to get this puppy (that is, kube-ansible) to properly use Fedora, when it comes down to it.
 
 ```
 kube-master ansible_host=192.168.1.149

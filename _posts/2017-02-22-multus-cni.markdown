@@ -12,7 +12,7 @@ Sometimes, one isn't enough. Especially when you've got network requirements tha
 
 Our goal here is going to be to spin up a pod using [the techniques described in this article](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) I wrote about spinning up Kubernetes 1.5 on CentOS -- from there, we'll install multus-cni and configure pod networking so that we expose a pod to two interfaces: 1. To Flannel, and 2. To the host's eth0 nic. 
 
-We'll cover two methods here -- the first being to use my [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) playbooks and spin it up with "no CNI networking configured" and configure this CNI plugin by hand -- this will allow us to familiarize ourselves with the components in detail here. Later, a secondary method using those playbooks will be introduced where it automatically sets up multus-cni using the playbooks, too.
+We'll cover two methods here -- the first being to use my [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible) playbooks and spin it up with "no CNI networking configured" and configure this CNI plugin by hand -- this will allow us to familiarize ourselves with the components in detail here. Later, a secondary method using those playbooks will be introduced where it automatically sets up multus-cni using the playbooks, too.
 
 If you're itching to get to the "how to" skip down to the "Let's get started" section below. 
 
@@ -44,7 +44,7 @@ Luckily for me, I picked up a little community help along the way and got the la
 
 ## Requirements for this walk-through
 
-The technique used here is based on [the technique used in this article](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) to spin up k8s 1.5 on CentOS. And this technique leverages my [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) playbooks available on GitHub. By default it spins up 3 virtual machines on a virtual machine host. You can bring your own virtual machines (or bare metal machines) just make sure they're (generally the latest) CentOS 7 installs. That article may familiarize you with the structure of the playbooks -- especially if you need some more detail on bringing your own inventory.
+The technique used here is based on [the technique used in this article](http://dougbtv.com/nfvpe/2017/02/16/kubernetes-1.5-centos/) to spin up k8s 1.5 on CentOS. And this technique leverages my [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible) playbooks available on GitHub. By default it spins up 3 virtual machines on a virtual machine host. You can bring your own virtual machines (or bare metal machines) just make sure they're (generally the latest) CentOS 7 installs. That article may familiarize you with the structure of the playbooks -- especially if you need some more detail on bringing your own inventory.
 
 Also, this uses Ansible playbooks, so you'll need an ansible machine. 
 
@@ -52,13 +52,13 @@ Note that I'm going to skip over some of the details of how to customize the Ans
 
 ## Let's get started
 
-Alright, let's pull the rip cord! Ok, first thing's first clone my kube-centos-ansible repo. 
+Alright, let's pull the rip cord! Ok, first thing's first clone my kube-ansible repo. 
 
 (note: you're cloning at a specific tag	to reference an	old style inventory, if	you wish you can remove	the `--branch` parameter, and go via head, and figure out the new inventory, just browse the `./inventory` dir)
 
 ```
-$ git clone --branch v0.1.1 https://github.com/redhat-nfvpe/kube-centos-ansible.git
-$ cd kube-centos-ansible
+$ git clone --branch v0.1.1 https://github.com/redhat-nfvpe/kube-ansible.git
+$ cd kube-ansible
 ```
 
 Go ahead and modify `./inventory/virt-host.inventory` to suit your virtual host, and let's spin up some virtual machines.

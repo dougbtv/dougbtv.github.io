@@ -8,7 +8,7 @@ title: Let's spin up k8s 1.5 on CentOS (with CNI pod networking, too!)
 category: nfvpe
 ---
 
-Alright, so you've seen my blog [post about installing Kubernetes by hand](http://dougbtv.com/nfvpe/2017/02/09/kubernetes-on-centos/) on CentOS, now... Let's make that easier and do that with an Ansible playbook, specifically my [kube-centos-ansible](https://github.com/redhat-nfvpe/kube-centos-ansible) playbook. This time we'll have Kubernetes 1.5 running on a cluster of 3 VMs, and we'll use ~~weave~~ flannel as a CNI plugin to handle our pod network. And to make it more fun, we'll even expose some pods to the 'outside world', so we can actually (kinda) do something with them. Ready? Let's go!
+Alright, so you've seen my blog [post about installing Kubernetes by hand](http://dougbtv.com/nfvpe/2017/02/09/kubernetes-on-centos/) on CentOS, now... Let's make that easier and do that with an Ansible playbook, specifically my [kube-ansible](https://github.com/redhat-nfvpe/kube-ansible) playbook. This time we'll have Kubernetes 1.5 running on a cluster of 3 VMs, and we'll use ~~weave~~ flannel as a CNI plugin to handle our pod network. And to make it more fun, we'll even expose some pods to the 'outside world', so we can actually (kinda) do something with them. Ready? Let's go!
 
 *Slight warning & update*: So this article is about using Kube 1.5, right? Well... It uses an RPM based install, and the repo doesn't keep around kubeadm 1.5. So, the playbooks referenced now use Kube 1.6.1 beta as of this update. Everything should be 99% the same. If anything, when you go to use the `kubectl` commands, just do it as the "centos" user on the VMs we spin up here.
 
@@ -33,8 +33,8 @@ Along with the below you need a client machine from which to run your ansible pl
 (note: you're cloning at a specific tag to reference an old style inventory, if you wish you can remove the `--branch` parameter, and go via head, and figure out the new inventory, just browse the `./inventory` dir)
 
 ```
-$ git clone --branch v0.1.1 https://github.com/redhat-nfvpe/kube-centos-ansible.git
-$ cd kube-centos-ansible
+$ git clone --branch v0.1.1 https://github.com/redhat-nfvpe/kube-ansible.git
+$ cd kube-ansible
 ```
 
 In a choose your own adventure style, you can either choose from the below. 

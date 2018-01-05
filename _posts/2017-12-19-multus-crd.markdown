@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-12-19 11:00:01-05:00
+date: 2017-12-19 11:00:02-05:00
 layout: post
 slug: multus-crd
 title: Kubernetes multiple network interfaces -- but! With different configs per pod; Multus CNI has your back.
@@ -77,7 +77,7 @@ The rest of the variables can likely stay the same.
 $ cat inventory/multus-extravars.yml 
 ---
 bridge_networking: true
-bridge_name: virbr0
+bridge_name: br0
 bridge_physical_nic: "enp1s0f1"
 bridge_network_name: "br0"
 bridge_network_cidr: 192.168.1.0/24

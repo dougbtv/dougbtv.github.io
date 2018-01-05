@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-07-18 14:00:05-05:00
+date: 2017-07-18 14:00:06-05:00
 layout: post
 slug: openshift-ansible-lab-byo
 title: BYOB - Bring your own boxen to an OpenShift Origin lab!
@@ -198,9 +198,10 @@ And put the contents of that final inventory into `./my.inventory`
 
 Now you can run the openshift ansible playbook like so:
 
-(edit January 3rd 2018: The config playbook moved, so, here's where it is now)
+(edit January 3rd 2018: The config playbook moved, so, here's the two plays it's replaced with now)
 
 ```
+$ ansible-playbook -i my.inventory ./playbooks/prerequisites.yml
 $ ansible-playbook -i my.inventory ./playbooks/openshift-master/config.yml
 ```
 

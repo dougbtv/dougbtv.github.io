@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-05-18 16:30:05-07:00
+date: 2017-05-18 16:30:06-07:00
 layout: post
 slug: kubernetes-helm
 title: Sailing the 7 seas with Kubernetes Helm
@@ -38,7 +38,7 @@ Why not template them with Ansible, then? You could, too. But, using helm gives 
 Let's pick out a version from the [github releases of helm](https://github.com/kubernetes/helm/releases) and download the binary onto our Kubernetes master server.
 
 ```
-[centos@kube-master ~]$ curl -s https://storage.googleapis.com/kubernetes-helm/helm-v2.4.1-linux-amd64.tar.gz > helm.tar.gz
+[centos@kube-master ~]$ curl -sL https://storage.googleapis.com/kubernetes-helm/helm-v2.4.1-linux-amd64.tar.gz > helm.tar.gz
 [centos@kube-master ~]$ tar -xzvf helm.tar.gz 
 [centos@kube-master ~]$ chmod +x linux-amd64/helm 
 [centos@kube-master ~]$ sudo cp linux-amd64/helm /usr/local/bin

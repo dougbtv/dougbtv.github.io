@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-07-18 14:00:06-05:00
+date: 2017-07-18 14:00:07-05:00
 layout: post
 slug: openshift-ansible-lab-byo
 title: BYOB - Bring your own boxen to an OpenShift Origin lab!
@@ -61,7 +61,13 @@ I've got a few playbooks put together in a repo that'll help you gets some basic
 Go ahead and clone that.
 
 ```
-$ git clone --branch v0.0.1 https://github.com/dougbtv/openshift-ansible-bootstrap.git
+$ git clone https://github.com/dougbtv/openshift-ansible-bootstrap.git
+```
+
+Go ahead and then install the requirements...
+
+```
+ansible-galaxy install -r requirements.yml
 ```
 
 ## Setup the virtual machine host.
@@ -149,9 +155,9 @@ In the `openshift-ansible-bootstrap` clone's root, you'll find a file `final.inv
 Here's the whole thing in case you need it:
 
 ```
-openshift-master ansible_host=192.168.1.183
-openshift-minion-1 ansible_host=192.168.1.130
-openshift-minion-2 ansible_host=192.168.1.224
+openshift-master ansible_host=192.168.1.51
+openshift-minion-1 ansible_host=192.168.1.74
+openshift-minion-2 ansible_host=192.168.1.112
 
 [OSEv3:children]
 masters
@@ -164,10 +170,13 @@ etcd
 ansible_ssh_user=centos
 ansible_become=yes
 debug_level=2
-openshift_deployment_type=origin
+deployment_type=origin 
 # openshift_release=v3.6
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
 ansible_ssh_private_key_file=/root/.ssh/id_vm_rsa
+openshift_master_unsupported_embedded_etcd=true 
+openshift_disable_check=disk_availability,memory_availability
+# openshift_disable_check=docker_storage
 
 [masters]
 openshift-master
@@ -198,11 +207,11 @@ And put the contents of that final inventory into `./my.inventory`
 
 Now you can run the openshift ansible playbook like so:
 
-(edit January 3rd 2018: The config playbook moved, so, here's the two plays it's replaced with now)
+(edit January 23rd 2018: The config playbook moved, so, here's the two plays it's replaced with now)
 
 ```
 $ ansible-playbook -i my.inventory ./playbooks/prerequisites.yml
-$ ansible-playbook -i my.inventory ./playbooks/openshift-master/config.yml
+$ ansible-playbook -i my.inventory ./playbooks/deploy_cluster.yml
 ```
 
 Now, make 10 coffees -- and/or wait for your Vermont Coffee Company order to complete and then brew that coffee. This takes a bit.

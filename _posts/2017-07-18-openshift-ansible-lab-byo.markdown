@@ -1,16 +1,16 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-07-18 14:00:07-05:00
+date: 2017-07-18 14:00:08-05:00
 layout: post
 slug: openshift-ansible-lab-byo
 title: BYOB - Bring your own boxen to an OpenShift Origin lab!
 category: nfvpe
 ---
 
-Let's spin up a [OpenShift Origin](https://www.openshift.org/) lab today, we'll be using [openshift-ansible](https://github.com/openshift/openshift-ansible) with a "BYO" (bring your own) inventory. Or I'd rather say "BYOB" for "Bring your own [boxen](https://en.wiktionary.org/wiki/boxen)". OpenShift Origin is the upstream OpenShift -- in short, OpenShift is a PaaS (platform-as-a-service), but one that is built with a distribution of Kubernetes, and in my opinion -- is so valuable because of its strong opinions, which guide you towards some best practices for using Kubernetes for the enterprise. In addition, we'll use my [openshift-ansible-bootstrap](https://github.com/dougbtv/openshift-ansible-bootstrap) which we can use to A. spin up some VMs to use in the lab, and/or B. Setup some basics on the host to make sure we can properly install OpenShift Origin. Our goal today will be to setup an OpenShift Origin cluster with a master and two compute nodes, we'll verify that it's healthy -- and we'll deploy a very basic pod.
+Let's spin up a [OpenShift Origin](https://www.openshift.org/) lab today, we'll be using [openshift-ansible](https://github.com/openshift/openshift-ansible) with a "BYO" (bring your own) inventory. Or I'd rather say "BYOB" for "Bring your own [boxen](https://en.wiktionary.org/wiki/boxen)". OpenShift Origin is the upstream OpenShift -- in short, OpenShift is a PaaS (platform-as-a-service), but one that is built with a distribution of Kubernetes, and in my opinion -- is so valuable because of its strong opinions, which guide you towards some best practices for using Kubernetes for the enterprise. In addition, we'll use my team's [base-infra-bootstrap](https://github.com/redhat-nfvpe/base-infra-bootstrap) which we can use to A. spin up some VMs to use in the lab, and/or B. Setup some basics on the host to make sure we can properly install OpenShift Origin (which is the only thing I use that playbook for, to get a baseline OpenShift Origin environment). Our goal today will be to setup an OpenShift Origin cluster with a master and two compute nodes, we'll verify that it's healthy -- and we'll deploy a very basic pod.
 
-If you're itching to get your hands on the keyboard, skip down to "Clone Doug's `openshift-ansible-bootstrap`" to omit the intro.
+If you're itching to get your hands on the keyboard, skip down to "Clone Doug's `base-infra-bootstrap`" to omit the intro.
 
 ## What, exactly, are we going to deploy?
 
@@ -52,16 +52,16 @@ I followed the instructions for [configuring `direct-lvm` storage for Docker](ht
 
 Mostly though, these are covered in the playbooks, so, if you want, dig into those to see how I sorted it out. It's worth noting that in the most recent Docker versions (the version used here at the time of writing is 1.12.x) make setting up the `direct-lvm` volumes much easier, and it does all volume actions automagically. In short, what I do is dedicate a disk to each VM and then tell Docker to use it.
 
-## Clone Doug's `openshift-ansible-bootstrap`
+## Clone Doug's `base-infra-bootstrap`
 
 I'll assume now that you've got a machine to use that we can spin up virtual machines on, and that you have SSH keys from whatever box you're going to run ansible on to that host.
 
-I've got a few playbooks put together in a repo that'll help you gets some basics on a few hosts to use for spinning up OpenShift Origin with a BYO inventory. I call it, boringly, [openshift-ansible-bootstrap](https://github.com/dougbtv/openshift-ansible-bootstrap).
+I've got a few playbooks put together in a repo that'll help you gets some basics on a few hosts to use for spinning up OpenShift Origin with a BYO inventory. Its generic-as-can-be-name is, [base-infra-bootstrap](https://github.com/redhat-nfvpe/base-infra-bootstrap).
 
 Go ahead and clone that.
 
 ```
-$ git clone https://github.com/dougbtv/openshift-ansible-bootstrap.git
+$ git clone https://github.com/redhat-nfvpe/base-infra-bootstrap.git
 ```
 
 Go ahead and then install the requirements...
@@ -150,7 +150,7 @@ That one should finish in a pretty reasonable amount of time.
 
 ## Start the OpenShift Ansible run.
 
-In the `openshift-ansible-bootstrap` clone's root, you'll find a file `final.inventory` which is the inventory we're going to use for openshift-ansible -- except again, we'll have to replace the IPs in the first three lines of that file. (These will match what you created in the last step for the `bootstrap.yml`)
+In the `base-infra-bootstrap` clone's root, you'll find a file `final.inventory` which is the inventory we're going to use for openshift-ansible -- except again, we'll have to replace the IPs in the first three lines of that file. (These will match what you created in the last step for the `bootstrap.yml`)
 
 Here's the whole thing in case you need it:
 

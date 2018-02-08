@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-07-18 14:00:08-05:00
+date: 2017-07-18 14:00:09-05:00
 layout: post
 slug: openshift-ansible-lab-byo
 title: BYOB - Bring your own boxen to an OpenShift Origin lab!
@@ -170,7 +170,7 @@ etcd
 ansible_ssh_user=centos
 ansible_become=yes
 debug_level=2
-deployment_type=origin 
+openshift_deployment_type=origin 
 # openshift_release=v3.6
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
 ansible_ssh_private_key_file=/root/.ssh/id_vm_rsa

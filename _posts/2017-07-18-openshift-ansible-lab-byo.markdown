@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-07-18 14:00:09-05:00
+date: 2017-07-18 14:00:10-05:00
 layout: post
 slug: openshift-ansible-lab-byo
 title: BYOB - Bring your own boxen to an OpenShift Origin lab!
@@ -72,14 +72,19 @@ ansible-galaxy install -r requirements.yml
 
 ## Setup the virtual machine host.
 
-Alright, first thing let's open up the `./inventory/inventory` file in the clone. Modify the `virt_host` line (in the first few lines) to have a `ansible_host` that has the IP (or hostname) of the machine we're going to provision.
+Alright, first thing let's create an inventory to define where our virtual machine host is. This assumes you have a fresh install of CentOS 7 on your virtual machine host. If you'd like an example, open up the `./inventory/example_virtual/openshift-ansible.inventory` file in the clone. Modify the `virt_host` line (in the first few lines) to have a `ansible_host` that has the IP (or hostname) of the machine we're going to provision. In theory your inventory can be this simple:
 
 ```
 # Setup this host first, and put the IP here.
 virt_host ansible_host=192.168.1.42 ansible_ssh_user=root
+
+[virthosts]
+virt_host
 ```
 
-You'll need to specify the NIC that you use to access the LAN/WAN on that host with:
+Create a file like that on your own, or from the example, and put it @ `./inventory/your.inventory`.
+
+But in reality -- you'll probably need to specify the NIC that you use to access the LAN/WAN on that host with:
 
 ```
 bridge_physical_nic=enp1s0f1
@@ -96,7 +101,7 @@ bridge_network_cidr=192.168.1.0/24
 Now that you have that setup, we can run the `virt-host-setup.yml`, like so:
 
 ```
-$ ansible-playbook -i inventory/inventory virt-host-setup.yml
+$ ansible-playbook -i inventory/your.inventory virt-host-setup.yml
 ```
 
 Oh is it coffee time? IT IS COFFEE TIME. Fill up a big mug, and I recommend stocking on up [Vermont Coffee Company's Tres](http://www.vermontcoffeecompany.com/Vermont_Coffee_Company/Viva_Cafe_Dominicano_story.html). It's legit.
@@ -108,13 +113,18 @@ In this process we have:
 
 ## Setup the inventory for the virtual machines (and grab the ssh keys)
 
-Look in the output from the playbook and look for a section called: "Here are the IPs of the VMs", grab those IPs and add them into the `./inventory/inventory` file in this section:
+Look in the output from the playbook and look for a section called: "Here are the IPs of the VMs", grab those IPs and add them into the `./inventory/your.inventory` file in this section:
 
 ```
 # After running the virt-host-setup, then change these to match.
 openshift-master ansible_host=192.168.1.183
-openshift-minion-1 ansible_host=192.168.1.130
-openshift-minion-2 ansible_host=192.168.1.224
+openshift-node-1 ansible_host=192.168.1.130
+openshift-node-2 ansible_host=192.168.1.224
+
+[nodes]
+openshift-master
+openshift-node-1
+openshift-node-2
 ```
 
 Ok, but, that's no good without grabbing the SSH key to access these. You'll find the key to them on the virt host, in root's directory, the file should be here:
@@ -156,8 +166,8 @@ Here's the whole thing in case you need it:
 
 ```
 openshift-master ansible_host=192.168.1.51
-openshift-minion-1 ansible_host=192.168.1.74
-openshift-minion-2 ansible_host=192.168.1.112
+openshift-node-1 ansible_host=192.168.1.74
+openshift-node-2 ansible_host=192.168.1.112
 
 [OSEv3:children]
 masters
@@ -190,7 +200,7 @@ openshift-master
 [nodes]
 # make them unschedulable by adding openshift_schedulable=False any node that's also a master.
 openshift-master openshift_node_labels="{'region': 'infra', 'zone': 'default'}" openshift_schedulable=true
-openshift-minion-[1:2] openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
+openshift-node-[1:2] openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
 ```
 
 Alright, now, let's ssh into the virtual machine host, and we'll find that it's cloned the openshift-ansible repo. 
@@ -228,8 +238,8 @@ SSH into the master, and run:
 [centos@openshift-master ~]$ oc get nodes
 NAME                               STATUS    AGE
 openshift-master.example.local     Ready     52m
-openshift-minion-1.example.local   Ready     52m
-openshift-minion-2.example.local   Ready     52m
+openshift-node-1.example.local   Ready     52m
+openshift-node-2.example.local   Ready     52m
 ```
 
 You should have 3 nodes, and you might have noticed something in the `./final.inventory` -- I've told OpenShift that it's OK to schedule pods on the master. We're using a lot of resources for this lab, so, might as well make use of the master, too.

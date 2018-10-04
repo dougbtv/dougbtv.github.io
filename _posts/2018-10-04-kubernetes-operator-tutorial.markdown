@@ -1,16 +1,33 @@
 ---
 author: dougbtv
 comments: true
-date: 2018-07-25 16:06:01-05:00
+date: 2018-10-04 11:55:01-05:00
 layout: post
 slug: kubernetes-operator-tutorial
-title: A Kubernetes Operator Tutorial? You got it, with Operator-SDK and an Asterisk Operator!
+title: A Kubernetes Operator Tutorial? You got it, with the Operator-SDK and an Asterisk Operator!
 category: nfvpe
 ---
 
-So you need a Kubernetes Operator Tutorial, right? I sure did when I start. So guess what? [I got that b-roll](https://www.youtube.com/watch?v=SItFvB0Upb8)!  In this tutorial, we're going to use the [Operator SDK](https://github.com/operator-framework/operator-sdk), and I definitely got myself up-and-running by following the [Operator Framework User Guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md). Once we have all that setup
+So you need a Kubernetes Operator Tutorial, right? I sure did when I started. So guess what? [I got that b-roll](https://www.youtube.com/watch?v=SItFvB0Upb8)!  In this tutorial, we're going to use the [Operator SDK](https://github.com/operator-framework/operator-sdk), and I definitely got myself up-and-running by following the [Operator Framework User Guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md). Once we have all that setup -- oh yeah! We're going to run a custom Operator. One that's designed for Asterisk, it can spin up Asterisk instances, discover them as services and dynamically create SIP trunks between n-number-of-instances of Asterisk so they can all reach one another to make calls between them. Fire up your terminals, it's time to get moving with Operators.
+
+What exactly are Kubernetes Operators? In my own description -- Operators are applications that manage other applications, specifically with tight integration with the Kubernetes API. They allow you build in your own "operational knowledge" into them, and perform automated actions when managing those applications. You might also want to see what [CoreOS has to say on the topic](https://coreos.com/operators/), read their [blog article where they introduced operators](https://coreos.com/blog/introducing-operators.html).
+
+Sidenote: Man, what an overloaded term, Operators! In the telephony world, well, we have operators, like... a [switchboard operator](https://www.google.com/search?tbm=isch&source=hp&biw=1916&bih=926&ei=9Eq2W8XkGtC05gKu74Uw&q=switchboard+operator&oq=switchboard+operator&gs_l=img.3..0l10.505.2736..2811...0.0..1.103.1267.18j1......2....1..gws-wiz-img.....0..35i39.XYtoYQsWkvs) (I guess that one's at least a little obsolete). Then we have platform operators, like... sysops. And we have how things operate, and the operations they perform... Oh my.
+
+A guy on my team said (paraphrased): "Well if they're applications that manage applications, then... Why write them in Go? Why not just write them in bash?". He was... Likely kidding. However, it always kind of stuck with me and got me to think about it a lot. One of the main reasons why you'll see these written in Go is because it's going to be the default choice for interacting with the Kubernetes API. There's likely other ways to do it -- but, all of the popular tools for interacting with it are written in Go, just like Kubernetes itself. The thing here is -- you probably care about managing your application running in Kubernetes with an operator because you care about integrating with the Kubernetes API.
+
+One more thing to keep in mind here as we continue along -- the idea of CRDS -- Custom Resource Definitions. These are the lingua franca of Kubernetes Operators. We often watch what these are doing and take actions based on them. What's a CRD? It's often described as "a way to extend the Kubernetes API", which is true. The thing is -- that sounds SO BIG. It sounds daunting. It's not really. CRDs, in the end, are just a way for you to store some of your own custom data, and then access it through the Kubernetes API. Think of it as some meta data you can push into the Kube API and then access it -- so if you're interacting with the Kube API, it's simple to store some of your own data, without having to roll-your-own way of otherwise storing it (and otherwise reading & writing that data).
+
+Today we have a big agenda for this blog article... Here's what we're going to do:
+
+* Create a development environment where we can use the [operator-sdk](https://github.com/operator-framework/operator-sdk)
+* Create own application as scaffolded by the Operator SDK itself.
+* Spin up the [asterisk-operator](https://github.com/dougbtv/asterisk-operator), dissect it a little bit, and then we'll run it and see it in action.
+* Lastly, we'll introduce the Helm Operator, a way to kind of lower the barrier of entry that allows you to create a Kubernetes Operator using Helm, and it might solve some of your problems that you'd use an Operator for without having to slang any golang.
 
 ## References
+
+Here's a few articles that I used when I was building this article myself.
 
 * [Helm Operator article from blog.openshift.com](https://blog.openshift.com/make-a-kubernetes-operator-in-15-minutes-with-helm/)
 * [LinuxHint Operator tutorial](https://linuxhint.com/kubernetes_operator/)
@@ -27,7 +44,7 @@ So you need a Kubernetes Operator Tutorial, right? I sure did when I start. So g
 
 ## Basic development environment setup
 
-Alright, we've got some deps to work through. Including, ahem, [dep](https://golang.github.io/dep/docs/installation.html). I didn't include "root or your regular user" but in short, generally, just the `yum` & `systemctl` lines here require su, otherwise they should be your regular user (especially for setting up your `GOPATH` and installing dep).
+Alright, we've got some deps to work through. Including, ahem, [dep](https://golang.github.io/dep/docs/installation.html). I didn't include "root or your regular user" but in short, generally, just the `yum` & `systemctl` lines here require su, otherwise they should be your regular user.
 
 Make sure you have git, and this is a good time to install whatever usual goodies you use.
 
@@ -76,6 +93,8 @@ $ curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.28.2/min
 $ sudo /usr/local/bin/minikube start --vm-driver=none
 ```
 
+It'll take a few minutes while it downloads a few container images from which it runs Kubernetes.
+
 If something went wrong and you need to restart minikube from scratch you can do so with:
 
 ```
@@ -83,6 +102,14 @@ $ sudo /usr/local/bin/minikube stop; cd /etc/kubernetes/; sudo rm -F *.conf; /us
 ```
 
 Follow the instructions from minikube for setting up your `.kube` folder. I didn't have great luck with it, so I performed a `sudo su -` in order to run say, `kubectl get nodes` to see that the cluster was OK. In my case, this also meant that I had to bring the cluster up as root as well. 
+
+You can test that your minikube is operational with:
+
+```
+kubectl get nodes
+```
+
+It should list just a single node.
 
 Install a [nice-and-up-to-date-golang](http://go-repo.io).
 
@@ -100,6 +127,7 @@ PATH=$PATH:$HOME/bin:$(go env GOPATH)/bin
 export PATH
 ```
 
+If you do the same thing you might want to be mindful of the `/home/user` in that path.
 
 Setup your go environment a little, goal here being able to run binaries that are in your `GOPATH`'s `bin` directory.
 
@@ -112,7 +140,7 @@ $ export PATH=$PATH:$(go env GOPATH)/bin
 Ensure that directory exists...
 
 ```
-mkdir -p /home/centos/go/bin
+mkdir -p $GOPATH/bin
 ```
 
 Install [dep](https://golang.github.io/dep/docs/installation.html).
@@ -155,7 +183,7 @@ Also, ignore if it complains it can't complete the git actions, they're so simpl
 
 Let's modify the types package to define what our CRD looks like...
 
-Modify `./pkg/apis/cache/v1alpha1/types.go`, replace the two structs at the bottom like so:
+Modify `./pkg/apis/cache/v1alpha1/types.go`, replace the two structs at the bottom (that say `// Fill me`) like so:
 
 ```
 type MemcachedSpec struct {
@@ -199,7 +227,7 @@ $ kubectl create -f deploy/crd.yaml
 Once it has been created, you can see it's listed, but, there's no CRD objects yet...
 
 ```
-$ sudo kubectl get memcacheds.cache.example.com
+$ kubectl get memcacheds.cache.example.com
 ```
 
 In the [Operator-SDK user guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md#build-and-run-the-operator) they list two options for running your SDK. Of course, the production way to do it is create a docker image and push it up to a registry, but... we haven't even compiled this yet, so let's go one step at a time and run in our local cluster.
@@ -263,7 +291,7 @@ Awesome, 4 instances going. Alright cool, we've got an operator running! So... C
 
 # Creating our own operator!
 
-Well, almost! What we're going to do now is use Doug's asterisk-operator.
+Well, almost! What we're going to do now is use Doug's asterisk-operator. Hopefully there's some portions here that you can use as a springboard for your own Operator.
 
 ## How the operator was created
 
@@ -303,7 +331,133 @@ In short the application really just does three things:
 
 This assumes that you've completed creating the development environment above, and have it all running -- you know, with golang and GOPATH all set, minikube running and the operator-sdk binaries available.
 
+First things first -- make sure you pull the image we'll use in advance, this will make for a lot less confusing waiting when you first start the operator itself.
 
+```
+docker pull dougbtv/asterisk-example-operator
+```
+
+Then, clone the asterisk-operator git repo:
+
+```
+mkdir -p $GOPATH/src/github.com/dougbtv && cd $GOPATH/src/github.com/dougbtv
+git clone https://github.com/dougbtv/asterisk-operator.git && cd asterisk-operator
+```
+
+We'll need to create the CRD for it:
+
+```
+kubectl create -f deploy/crd.yaml
+```
+
+Next... We'll just start the operator itself!
+
+```
+operator-sdk up local
+```
+
+Ok, cool, now, we'll create a CRD so that the operator sees it and spins up asterisk instances -- open up a new terminal window for this.
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: "voip.example.com/v1alpha1"
+kind: "Asterisk"
+metadata:
+  name: "example-asterisk"
+spec:
+  size: 2
+  config: "an unused field."
+EOF
+```
+
+Take a look at the output from the operator -- you'll see it logging a number of things. It has some waits to properly wait for Asterisk's IP to be found, and for Asterisk instances to be booted -- and then it'll log that it's creating some trunks for us.
+
+Check out the deployment to see that all of the instances are up:
+
+```
+watch -n1 kubectl get deployment
+```
+
+You should see that it desires to have 2 instances, and that it's fulfilled those instances. It does this as it has created a [deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/).
+
+Let's go ahead and exec into one of the Asterisk pods, and we'll run the Asterisk console...
+
+```
+kubectl exec -it $(kubectl get pods -o wide | grep asterisk | head -n1 | awk '{print $1}') -- asterisk -rvvv
+```
+
+Let's show the AORs (addresses of record):
+
+```
+example-asterisk-6c6dff544-2wfwg*CLI> pjsip show aors
+
+      Aor:  <Aor..............................................>  <MaxContact>
+    Contact:  <Aor/ContactUri............................> <Hash....> <Status> <RTT(ms)..>
+==========================================================================================
+
+      Aor:  example-asterisk-6c6dff544-wnkpx                     0
+    Contact:  example-asterisk-6c6dff544-wnkpx/sip:anyuser 1a830a6772 Unknown         nan
+```
+
+Ok, cool, this has a trunk setup for us, the trunk name in the `Aor` field is `example-asterisk-6c6dff544-wnkpx`. Go ahead and copy that value in your own terminal (yours will be different, if it's not different -- leave your keyboard right now, and go buy a lotto ticket).
+
+We can use that to originate a call, I do so with:
+
+```
+example-asterisk-6c6dff544-2wfwg*CLI> channel originate PJSIP/333@example-asterisk-6c6dff544-wnkpx application wait 2
+    -- Called 333@example-asterisk-6c6dff544-wnkpx
+    -- PJSIP/example-asterisk-6c6dff544-wnkpx-00000000 answered
+```
+
+And we can see that there's a call that's been originated, and it has been answered by the other end! Go ahead an `quit` for now.
+
+Ok -- but, here comes the cool stuff. Let's increase the size of our cluster, we requested 2 instances of Asterisk earlier, now we'll bump it up to 3.
+
+```
+cat <<EOF | kubectl apply -f -
+apiVersion: "voip.example.com/v1alpha1"
+kind: "Asterisk"
+metadata:
+  name: "example-asterisk"
+spec:
+  size: 3
+  config: "an unused field."
+EOF
+```
+
+Now our `kubectl get deployment` will show us that we have three, but! Better yet, we have all the SIP trunks created for us. Let's exec in and look at the AORs again.
+
+```
+kubectl exec -it $(kubectl get pods -o wide | grep asterisk | head -n1 | awk '{print $1}') -- asterisk -rvvv
+```
+
+Then we'll do the same and show the AORs:
+
+```
+example-asterisk-6c6dff544-2wfwg*CLI> pjsip show aors
+
+      Aor:  <Aor..............................................>  <MaxContact>
+    Contact:  <Aor/ContactUri............................> <Hash....> <Status> <RTT(ms)..>
+==========================================================================================
+
+      Aor:  example-asterisk-6c6dff544-k2m7z                     0
+    Contact:  example-asterisk-6c6dff544-k2m7z/sip:anyuser 0d391d57b2 Unknown         nan
+
+      Aor:  example-asterisk-6c6dff544-wnkpx                     0
+    Contact:  example-asterisk-6c6dff544-wnkpx/sip:anyuser 1a830a6772 Unknown         nan
+```
+
+Ah ha! Now there's 2 trunks available, the operator went and created a new one for us to the new Asterisk instance.
+
+And we can originate a call to it, too!
+
+```
+example-asterisk-6c6dff544-2wfwg*CLI> channel originate PJSIP/333@example-asterisk-6c6dff544-wnkpx application wait 2
+    -- Called 333@example-asterisk-6c6dff544-wnkpx
+    -- PJSIP/example-asterisk-6c6dff544-wnkpx-00000001 answered
+```
+
+And there you have it -- you can do it for n-number of instances. I tested it out with 33 instances, which works out to 1056 trunks (counting both sides) and... While it took like 15ish minutes, which felt like forever... It takes me longer than that to create 2 or 3 by hand! So... Not a terrible trade off.
 
 # Bonus: Helm Operator!
 

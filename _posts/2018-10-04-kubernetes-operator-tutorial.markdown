@@ -4,13 +4,11 @@ comments: true
 date: 2018-07-25 16:06:01-05:00
 layout: post
 slug: kubernetes-operator-tutorial
-title: A Kubernetes Operator Tutorial? I got that b-roll.
+title: A Kubernetes Operator Tutorial? You got it, with Operator-SDK and an Asterisk Operator!
 category: nfvpe
 ---
 
-So you need a Kubernetes Operator Tutorial, right? I sure did when I start. So guess what? [I got that b-roll](https://www.youtube.com/watch?v=SItFvB0Upb8)! 
-
-In this tutorial, we're going to use the [Operator SDK](https://github.com/operator-framework/operator-sdk), and I definitely got myself up-and-running by following the [Operator Framework User Guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md).
+So you need a Kubernetes Operator Tutorial, right? I sure did when I start. So guess what? [I got that b-roll](https://www.youtube.com/watch?v=SItFvB0Upb8)!  In this tutorial, we're going to use the [Operator SDK](https://github.com/operator-framework/operator-sdk), and I definitely got myself up-and-running by following the [Operator Framework User Guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md). Once we have all that setup
 
 ## References
 
@@ -65,6 +63,12 @@ EOF
 $ yum install -y kubectl
 ```
 
+Double check that you've got `bridge-nf-call-iptables` all good.
+
+```
+$ sudo /bin/bash -c 'echo "1" > /proc/sys/net/bridge/bridge-nf-call-iptables'
+```
+
 Install minikube (optional: if this is part of a cluster or otherwise have access to another cluster). I'm not generally a huge minikube fan, however, in this case we're working on a development environment (seeing that we're looking into building an operator), so it's actually appropriate here.
 
 ```
@@ -78,7 +82,17 @@ If something went wrong and you need to restart minikube from scratch you can do
 $ sudo /usr/local/bin/minikube stop; cd /etc/kubernetes/; sudo rm -F *.conf; /usr/local/bin/minikube delete; cd -
 ```
 
-Follow the instructions from minikube for setting up your `.kube` folder. I didn't have great luck with it, so I performed a `sudo su -` in order to run say, `kubectl get nodes` to see that the cluster was OK. In my case, this also meant that I had to bring the cluster up as root as well. I changed root's `~/.bash_profile` path to:
+Follow the instructions from minikube for setting up your `.kube` folder. I didn't have great luck with it, so I performed a `sudo su -` in order to run say, `kubectl get nodes` to see that the cluster was OK. In my case, this also meant that I had to bring the cluster up as root as well. 
+
+Install a [nice-and-up-to-date-golang](http://go-repo.io).
+
+```
+$ rpm --import https://mirror.go-repo.io/centos/RPM-GPG-KEY-GO-REPO
+$ curl -s https://mirror.go-repo.io/centos/go-repo.repo | tee /etc/yum.repos.d/go-repo.repo
+$ yum install -y golang
+```
+
+I changed root's `~/.bash_profile` path (given my above Minikube situation) to:
 
 ```
 export GOPATH=/home/centos/go
@@ -86,14 +100,6 @@ PATH=$PATH:$HOME/bin:$(go env GOPATH)/bin
 export PATH
 ```
 
-Install a [nice-and-up-to-date-golang](http://go-repo.io/).
-
-```
-$ rpm --import https://mirror.go-repo.io/centos/RPM-GPG-KEY-GO-REPO
-$ curl -s https://mirror.go-repo.io/centos/go-repo.repo | tee /etc/yum.repos.d/go-repo.repo
-$ yum install golang
-$ curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-```
 
 Setup your go environment a little, goal here being able to run binaries that are in your `GOPATH`'s `bin` directory.
 
@@ -101,6 +107,12 @@ Setup your go environment a little, goal here being able to run binaries that ar
 $ mkdir -p ~/go/bin
 $ export GOPATH=~/go
 $ export PATH=$PATH:$(go env GOPATH)/bin
+```
+
+Ensure that directory exists...
+
+```
+mkdir -p /home/centos/go/bin
 ```
 
 Install [dep](https://golang.github.io/dep/docs/installation.html).
@@ -117,7 +129,7 @@ $ cd $GOPATH/src/github.com/operator-framework
 $ git clone https://github.com/operator-framework/operator-sdk
 $ cd operator-sdk
 $ git checkout master
-$ make dep && make install
+$ export PATH=$PATH:$GOPATH/bin && make dep && make install
 ```
 
 ## Create your new project
@@ -164,13 +176,13 @@ operator-sdk generate k8s
 
 Then let's update the handler, it's @ `./pkg/stub/handler.go`
 
+We'll replace that file in its entirety with [this example memcached deployment code from github](https://raw.githubusercontent.com/operator-framework/operator-sdk/master/example/memcached-operator/handler.go.tmpl). Just copy-pasta it, or curl it down, whatever you like.
+
 You'll also need to change the github namespace in that file, replace it with your namespace + the project name you used during `operator-sdk new $name_here`. I changed mine like so:
 
 ```
 $ sed -i -e 's|example-inc/memcached-operator|dougbtv/hello-operator|' pkg/stub/handler.go
 ```
-
-We'll replace that file in its entirety with [this example memcached deployment code from github](https://raw.githubusercontent.com/operator-framework/operator-sdk/master/example/memcached-operator/handler.go.tmpl). Just copy-pasta it, or curl it down, whatever you like.
 
 Now, let's create the CRD. First, let's just `cat` (I'm a cat person, like, seriously I love cats, if you're a dog person you can stop reading this article right now, or, you probably use `less` as a pager too, dog people, seriously!) it and take a look...
 
@@ -187,7 +199,6 @@ $ kubectl create -f deploy/crd.yaml
 Once it has been created, you can see it's listed, but, there's no CRD objects yet...
 
 ```
-$ sudo kubectl create -f deploy/crd.yaml
 $ sudo kubectl get memcacheds.cache.example.com
 ```
 
@@ -252,4 +263,103 @@ Awesome, 4 instances going. Alright cool, we've got an operator running! So... C
 
 # Creating our own operator!
 
-# Helm Operator!
+Well, almost! What we're going to do now is use Doug's asterisk-operator.
+
+## How the operator was created
+
+Some of the things that I modified after I had the scaffold was..
+
+* Updated the `types.go` to include the fields I needed.
+* I moved the `/pkg/apis/cache/` to `/pkg/apis/voip/`
+    - And changed references to `memcached` to `asterisk`
+* Created a scheme to discover all IPs of the Asterisk pods
+* Created REST API called to Asterisk to push the configuration
+
+## Some things to check out in the code...
+
+Aside from what we reviewed earlier when we were scaffolding the application -- which is argually the most interesting from a standpoint of "How do I create any operator that want?" The second most interesting, or, potentially most interesting if you're interested in Asterisk -- is how we handle the service discovery and dynamically pushing configuration to Asterisk.
+
+You can find the bulk of this in the [handler.go](https://github.com/dougbtv/asterisk-operator/blob/master/pkg/stub/handler.go). Give it a skim through, and you'll find where it makes the actions of:
+
+1. Creating the deployment and giving it a proper size based on the CRDs
+2. How it figures out the IP addresses of each pod, and then goes through and uses those to cycle through all the instances and create SIP trunks to all of the other Asterisk instances.
+
+But... What about making it better? This Operator is mostly provided as an example, and to "do a cool thing with Asterisk & Operators", so some of the things here are clearly in the proof-of-concept realm. A few of the things that it could use improvement with are...
+
+1. It's not very graceful with how it handles waiting for the Asterisk instances to become ready. There's some timing issues with when the pod is created, and when the IP address is assigned. It's not the cleanest in that regard.
+2. There's a complete "brute force" method by which it creates all the SIP trunks. If you start with say, 2 instances, and change to 3 instances -- well... It creates all of the SIP trunks all over again instead of just creating the couple new ones it needs, I went along with the idea of don't [prematurely optimize](http://wiki.c2.com/?PrematureOptimization). But, this could really justified to optimize it.
+
+## What's the application doing?
+
+![Asterisk Operator diagram](https://i.imgur.com/L4rvtiT.png)
+
+In short the application really just does three things:
+
+1. Watches a CRD to see how many Asterisk instances to create
+2. Figures out the IP addresses of all the Asterisk instances, using the Kube API
+3. Creates SIP trunks from each Asterisk instance to each other Asterisk instance, using [ARI push configuration](https://blogs.asterisk.org/2016/03/09/pushing-pjsip-configuration-with-ari/), allowing us to make calls from any Asterisk instance to any other Asterisk instance.
+
+## Let's give the Asterisk Operator a spin!
+
+This assumes that you've completed creating the development environment above, and have it all running -- you know, with golang and GOPATH all set, minikube running and the operator-sdk binaries available.
+
+
+
+# Bonus: Helm Operator!
+
+Let's follow the [15 minute operator with Helm tutorial](https://blog.openshift.com/make-a-kubernetes-operator-in-15-minutes-with-helm/). See how far we can get. This uses the [helm operator kit](https://github.com/operator-framework/helm-app-operator-kit).
+
+Clone the operator kit, we'll use their example.
+
+```
+$ git clone https://github.com/operator-framework/helm-app-operator-kit.git
+$ cd helm-app-operator-kit/
+```
+
+Now, build a Docker image. Note: You'll probably want to change the name (from `-t dougbtv/...` to your name, or someone else's name if that's how you roll).
+
+```
+docker build \
+  --build-arg HELM_CHART=https://storage.googleapis.com/kubernetes-charts/tomcat-0.1.0.tgz \
+  --build-arg API_VERSION=apache.org/v1alpha1 \
+  --build-arg KIND=Tomcat \
+  -t dougbtv/tomcat-operator:latest .
+```
+
+Docker login and then push the image.
+
+```
+$ docker login
+$ docker push dougbtv/tomcat-operator:latest
+```
+
+Alright, now there's a series of things we've got to customize. There's more instructions on [what needs to be customized](https://github.com/operator-framework/helm-app-operator-kit#instructions), too, if you need it.
+
+```
+# this can stay changed to "tomcat"
+$ sed -i -e 's/<chart>/tomcat/' helm-app-operator/deploy/operator.yaml 
+
+# this you should change to your docker namespace
+$ sed -i -e 's|quay.io/<namespace>|dougbtv|' helm-app-operator/deploy/operator.yaml
+
+# Change the group & kind to match what we had in the docker build.
+$ sed -i -e 's/group: example.com/group: apache.org/' helm-app-operator/deploy/crd.yaml 
+$ sed -i -e 's/kind: ExampleApp/kind: Tomcat/' helm-app-operator/deploy/crd.yaml 
+
+# And the name has to match that, too
+$ sed -i -e 's/name: exampleapps.example.com/name: exampleapps.apache.org/' helm-app-operator/deploy/crd.yaml
+
+# Finally update the Custom Resource to be what we like.
+$ sed -i -e 's|apiVersion: example.com/v1alpha1|apiVersion: apache.org/v1alpha1|' helm-app-operator/deploy/cr.yaml
+$ sed -i -e 's/kind: ExampleApp/kind: Tomcat/' helm-app-operator/deploy/cr.yaml
+```
+
+Now let's deploy all that stuff we created!
+
+```
+$ kubectl create -f helm-app-operator/deploy/crd.yaml
+$ kubectl create -n default -f helm-app-operator/deploy/rbac.yaml
+$ kubectl create -n default -f helm-app-operator/deploy/operator.yaml
+$ kubectl create -n default -f helm-app-operator/deploy/cr.yaml
+```
+

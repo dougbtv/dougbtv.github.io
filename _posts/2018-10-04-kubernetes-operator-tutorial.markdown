@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2018-10-04 11:55:01-05:00
+date: 2018-10-04 11:55:01-05:01
 layout: post
 slug: kubernetes-operator-tutorial
 title: A Kubernetes Operator Tutorial? You got it, with the Operator-SDK and an Asterisk Operator!
@@ -167,7 +167,7 @@ We're going to create a sample project using the `operator-sdk` CLI tool. Note -
 ```
 $ mkdir -p $GOPATH/src/github.com/dougbtv
 $ cd $GOPATH/src/github.com/dougbtv
-$ operator-sdk new hello-operator --api-version=cache.example.com/v1alpha1 --kind=Memcached
+$ operator-sdk new hello-operator --kind=Memcached
 $ cd hello-operator
 ```
 

@@ -97,7 +97,7 @@ Let's curl that down to the master, and then we'll take a look at a few parts of
 [centos@kube-master ~]$ curl https://gist.githubusercontent.com/dougbtv/cf05026e48e5b8aa9068a7f6fcf91a56/raw/dd3dfbf5e440abea8781e27450bb64c31e280857/multus-working.yaml > multus.yaml
 ```
 
-Generally, my idea was to take the [Flannel pod networking yaml](https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel.yml) and modify it to suit multus-cni, seeing they play together. In fact, I couldn't get it to work with just a multus-cni config alone. If you compare and contrast the two, you'll notice the Flannel yaml (say that outloud three times in a row) has been borrowed from heavily.
+Generally, my idea was to take the [Flannel pod networking yaml](https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel.yml) and modify it to suit multus-cni, seeing them play together. In fact, I couldn't get it to work with just a multus-cni config alone. If you compare and contrast the two, you'll notice the Flannel yaml (say that outloud three times in a row) has been borrowed from heavily.
 
 Go ahead and `cat` the `multus.yaml` file so we can look at it, or bring it up in your favorite editor as long as it's not emacs. If it is indeed emacs, the next step in this walk-through is for you to go jump in a lake and think about your life for a little while ;) (JK, I love you emacs brethren, you're just... weird.)
 

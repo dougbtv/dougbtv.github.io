@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2017-06-22 17:30:00-05:00
+date: 2017-06-22 17:30:01-05:00
 layout: post
 slug: cni-tutorial
 title: Let's create a workflow for writing CNI plugins (including writing your first CNI plugin!)
@@ -24,6 +24,8 @@ While it's not required -- you probably want to have a Kubernetes environment se
 You can get away without golang if you just go up to the point where we create a dummy plugin. If you want to go further, you'll need golang, and preferably Ansible to go ahead with running and inspecting Ratchet CNI.
 
 On whatever box you use as I use my master, you're going to need to install golang, e.g. on CentOS `yum install -y golang`, and you'll need Docker (unless you're cool enough to have another container runtime, in which case I salute you and you can go ahead with adapting towards that). 
+
+Also -- you might want to think about installing an even later version of Golang from [go-repo.io](http://go-repo.io/).
 
 Lastly, you might see some mix here between a prompt as an unprivileged user, and root. The best case scenario is that you [setup a regular user to use Docker](https://askubuntu.com/questions/477551/how-can-i-use-docker-without-sudo)... or you can just use root.
 
@@ -50,7 +52,7 @@ First thing we'll do is clone the [CNI](https://github.com/containernetworking/c
 git clone https://github.com/containernetworking/cni.git
 ```
 
-If you're not running in a Kubernetes environment, you'll also need to build some plugins, you can do so with a recipe like:
+If you're not running in a Kubernetes environment, you'll also need to build some [plugins](https://github.com/containernetworking/plugins). We'll clone another repo in order to do so. You can build them up with a recipe like:
 
 ```
 git clone https://github.com/containernetworking/plugins.git

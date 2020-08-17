@@ -20,7 +20,7 @@ Generally -- what these playbooks do is bootstrap some hosts for you so they're 
 
 Then, post install, the playbooks can install some [CNI plugins](https://kubernetes.io/docs/concepts/cluster-administration/network-plugins/) -- the plugins that Kubernetes uses to configure the networking on the cluster. By default we spin up the cluster with Flannel. 
 
-## Breif overview of the adventure.
+## Brief overview of the adventure.
 
 So what exactly are we going to do?
 

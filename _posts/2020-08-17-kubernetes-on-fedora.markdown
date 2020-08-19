@@ -8,6 +8,8 @@ title: Set up a Kubernetes Cluster on Fedora in 10 Minutes or Less with Kube-Ans
 category: nfvpe
 ---
 
+Note: credit doug and andrew properly before making a pr!
+
 Kubernetes can sometimes provide an unexpected challenge when trying to go through the installation procedure. If you're like me and just want to play around with Kubernetes without any hassle (raise your hand if you've ever been greeted with an unexpected suite of error messages after running `kubeadm init`), or just want to get an environment up and running quickly on a fedora machine to test something, this guide is for you. Our goal will be to get Kube-Ansible up and running (using Flannel as the CNI plugin), and then create a test pod to make sure everything's working.
 
 ## Disclaimers
@@ -43,12 +45,62 @@ Through this guide, we'll be walking through the following procedures:
   - This should also include ansible-galaxy to help with installation
 * Add the following to .bashrc for later using your favorite text editor
   - `alias ssh-virthost='ssh -o ProxyCommand="ssh -W %h:%p root@localhost"'`
+  - Then run `$ source ~/.bashrc`.
   - This allows us to use the "ssh-virthost" alias and will make life easier later. Essentially, it runs the command from our host machine.
-* Clone the repo
-  - git clone https://github.com/redhat-nfvpe/kube-ansible.git && cd kube-ansible
-  - ansible-galaxy install -r requirements.yml
+* Clone the repo and install requirements
+  - `$ git clone https://github.com/redhat-nfvpe/kube-ansible.git && cd kube-ansible`
+  - `$ ansible-galaxy install -r requirements.yml`
 
---breakpoint (stopped working here)
+Now we need to set a loop address for our host machine. This is because the VMs will be communicating with each other through the host, and so we need ssh access to it. Using your favorite text editor, add the following to `inventory/virthost/virthost.inventory`: 
+  * `vmhost ansible_host=127.0.0.1 ansible_ssh_user=root ansible_python_interpreter=/usr/bin/python3`
+
+At this point, we've made it through the bulk of setup. Before creating the VMs, we can optionally change default values for them in all.yml, located at `playbooks/ka-init/group_vars/`. The default names for the VMs will be kube-master1, kube-node-1, and kube-node-2. They will be set up with the default roles of master, worker, and worker respectively. We can change VM names as well as roles, or to strictly follow this tutorial, move ahead for now.
+
+## Creating the VMs
+
+We are now done with all set up, and can finally spin up our virtual machines! While installing, there are a few common bugs, and so I've included potential fixes for the ones I ran into in the next section.
+
+* Use a playbook to set up the following VMs: kube-master1, kube-node-1, and kube-node-2. 
+  - ansible-playbook -i inventory/virthost/  -e 'network_type=2nics'  -e ssh_proxy_enabled=true playbooks/virthost-setup.yml
+* Now use a playbook to install kubernetes on the VMs.
+  - ansible-playbook -i inventory/vms.local.generated playbooks/kube-install.yml
+  - This may take a bit of time to complete.
+* Try connecting to the master VM. 
+  - `$ ssh-virthost centos@kube-master1`
+
+Congratulations! All the difficult set up work is now behind us, and we can move on to configuring CNI plugins! If you've made it this far without running into any bugs, [toss a coin to your glitcher, o valley of silicon](https://youtu.be/PoQJM8SO6V0).
+
+## Common Issues and How to Fix Them
+
+There are a few common errors you may encounter while trying to run through the previous section. Hopefully this section should cover most of them and how to fix them.
+
+* If you are getting public key errors, you need to add an ssh key so you can access...yourself! Feel free to manually create any directories that you notice don't have already.
+  - `$ cd ~`
+  - `$ ssh-keygen` (leave filename and password empty unless you have reason to change them)
+  - `$ cp ~/.ssh/id_rsa.pub ~/.ssh/authorized_keys` (or, if you already have an authorized_keys file, `cat id_rsa.pub` and paste the result into authorized_keys).
+  - You should now be able to run the virthost-setup.yml!
+* If you are using docker on Fedora, and had to revert to cgroupsv1 do the following	
+  - Disable firewalld (It dosn’t play nice with Docker https://github.com/firewalld/firewalld/issues/461) 
+    - `$ systemctl stop firewalld`
+    - You may want to re-enable after using Kube-Ansible 
+  - Ensure sshd is active with `$ systemctl status sshd`. If it's not, start it with `$ systemctl start sshd`.
+  - Make sure libvirt’s default virtual network is active
+    - List the networks with `$ virsh net-list` 
+    - If “Default” is not shown create it with `$ virsh net-start default` 
+* If you are getting additional ssh errors, try the following
+  - `$ eval `ssh-agent -s``
+  - `$ ssh-add ~/.ssh/vmhost/id_vm_rsa`
+  - Note: for man in the middle attack warnings, this can happen when trying to reconnect at a later time. Delete the respective key from the known_hosts file as the warning suggests, and then try again.
+
+## Playing with CNI networking
+
+--breakpoint where i stopped working
+
+## Clean Up
+
+Because our environment is purely composed of VMs, we can simply exit kube-master-1 and run vm-teardown.yml
+  * `$ ansible-playbook -i inventory/virthost/virthost.inventory playbooks/vm-teardown.yml`
+
 
 Something that's a real challenge when you're trying to attach multiple networks to pods in Kubernetes is trying to get the right IP addresses assigned to those interfaces. Sure, you'd think, "Oh, give it an IP address, no big deal" -- but, turns out... It's less than trivial. That's why I came up with the IP Address Management (IPAM) plugin that I call "[Whereabouts](https://github.com/dougbtv/whereabouts)" -- you can think of it like a DHCP replacement, it assigns IP addresses dynamically to interfaces created by CNI plugins in Kubernetes. Today, we'll walk through how to use Whereabouts, and highlight some of the issues that it overcomes. First -- a little background.
 

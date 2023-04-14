@@ -1,14 +1,12 @@
 ---
 author: dougbtv
 comments: true
-date: 2023-04-14 08:00:00-05:00
+date: 2023-04-14 08:01:00-05:00
 layout: post
 slug: oobabooga-api
 title: Running LLM's locally and interacting with an API (Using Ooobabooga Web UI)
 category: nfvpe
 ---
-
-# Running LLM's locally and interacting with an API (Using Ooobabooga Web UI)
 
 Have you played with ChatGPT yet? Ummm, yeah, who hasn't!? I have pirate-styled rap battles to make! So let's get right to the point so we can get back to generating rap-battles as soon as possible!
 

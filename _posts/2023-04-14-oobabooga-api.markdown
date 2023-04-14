@@ -20,13 +20,13 @@ But yeah, instead of relying on a GPT service, I want to run the LLM myself, usi
 
 Ok, so I'm not going to go deep into the details of the installation, so I'm just going to give some pointers. It's not necessarily rocket science
 
-First up, we're going to install a webUI, OobaBooga: https://github.com/oobabooga/text-generation-webui
+First up, we're going to install a webUI, OobaBooga: [https://github.com/oobabooga/text-generation-webui](https://github.com/oobabooga/text-generation-webui)
 
 This is one of the few times I'm going to say the word "windows" on this blog, but, I actually installed mine on windows, because it's a windows box that's an art and music workstation where I've got my decent GPU (for gaming and also for stable diffusion and then associated windoze-y art tools). I follow [this youtube video](https://www.youtube.com/watch?v=ByV5w1ES38A&t=191s) by [@TroubleChute](https://www.youtube.com/@TroubleChute). I even used his opinionated script to automatically install Vicuna!
 
 But you can also just install it with [the instructions on the README](https://github.com/oobabooga/text-generation-webui#installation), which appears to be really straight forward.
 
-The Model we're going to use, Vicuna, you can find it @ https://vicuna.lmsys.org/ -- the thing that's interesting about Vicuna is that it's trained on crowd-sourced GPT output, and claims be 90% as good as GPT, which seems like a lofty statement. But so far it does seem like it's pretty decent, even if it does parrot a lot of the kind of "walled garden" stuff that ChatGPT says ("As an AI language model, I can't tell you what you asked me for" kind of stuff.)
+The Model we're going to use, Vicuna, you can find it @ [https://vicuna.lmsys.org/](https://vicuna.lmsys.org/) -- the thing that's interesting about Vicuna is that it's trained on crowd-sourced GPT output, and claims be 90% as good as GPT, which seems like a lofty statement. But so far it does seem like it's pretty decent, even if it does parrot a lot of the kind of "walled garden" stuff that ChatGPT says ("As an AI language model, I can't tell you what you asked me for" kind of stuff.)
 
 *Quick tip*: After you install it and you're playing with it on the WebUI, assuming you've installed Vicuna... Go to the bottom of the chat and find the radio button for "mode" and switch it to "instruct" and then in the "instruction template" drop down, select "Vicuna" -- this will parse the output from the LLM so it makes more sense in context with your queries/conversation/prompts to it.
 

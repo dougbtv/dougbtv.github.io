@@ -1,9 +1,9 @@
 ---
 author: dougbtv
 comments: true
-date: 2023-05-06 08:01:00-05:00
+date: 2023-05-06 08:02:00-05:00
 layout: post
-slug: fedora-stable-diffusion
+slug: fedora-stablediffusion
 title: Installing Stable Diffusion on Fedora 38
 category: nfvpe
 ---

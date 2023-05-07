@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2023-05-06 08:02:00-05:00
+date: 2023-05-06 08:05:00-05:00
 layout: post
 slug: stable-diffusion-fedora-38
 title: Installing Stable Diffusion on Fedora 38
@@ -43,9 +43,9 @@ export python_cmd=python3.10
 screen -S ./webui.sh --listen
 ```
 
-NOTE: I fire it up in `screen`. If you don't have Stockholm Syndrome for screen you can decide to not be a luddite and modify it to use `tmux`. And if you need a [cheat sheet for screen](https://gist.github.com/jctosta/af918e1618682638aa82), there you go. I also use the `--listen` flag because I'm going to connect to this from other machines on my network. 
+*NOTE*: I fire it up in `screen`. If you don't have Stockholm Syndrome for screen you can decide to not be a luddite and modify it to use `tmux`. And if you need a [cheat sheet for screen](https://gist.github.com/jctosta/af918e1618682638aa82), there you go. I also use the `--listen` flag because I'm going to connect to this from other machines on my network. 
 
-Then run `./user-webui.sh` the script once to get the venv, it may likely fail at this point.
+Then run the `./user-webui.sh` once to get the venv, it will likely fail at this point. Or if you're a smarter python user, create the venv yourself.
 
 Then enter the venv.
 
@@ -63,5 +63,5 @@ python3.10 -m ensurepip
 And now you can fire up the script!
 
 ```
-./webui.sh
+./user-webui.sh
 ```

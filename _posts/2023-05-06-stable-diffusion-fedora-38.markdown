@@ -1,18 +1,25 @@
 ---
 author: dougbtv
 comments: true
-date: 2023-05-06 08:05:00-05:00
+date: 2023-05-06 08:06:00-05:00
 layout: post
 slug: stable-diffusion-fedora-38
 title: Installing Stable Diffusion on Fedora 38
 category: nfvpe
 ---
 
+In today's tutorial, we're going to install Stable Diffusion on Fedora 38.
+
 I'm putting together a lab machine for GPU workloads. And the first thing I wanted to do was get Stable Diffusion running, and I'm also hopeful to start using it for training LoRA's, embeddings, maybe even a fine tuning checkpoint (we'll see).
 
 Fedora is my default home server setup, and I didn't find a direct guide on how to do it, although it's not terribly different from other distros
 
 ...Oddly enough I actually fired this up with Fedora Workstation.
+
+## Requirements
+
+* An install of Fedora 38
+* A nVidia GPU (if someone has insight on AMD GPUs, and wants to provide instructions, [hit me up](https://twitter.com/dougbtv?lang=en) and I'll update the article)
 
 ## Installing Automatic Stable Diffusion WebUI on Fedora 38
 

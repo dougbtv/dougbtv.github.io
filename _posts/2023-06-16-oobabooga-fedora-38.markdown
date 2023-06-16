@@ -4,7 +4,7 @@ comments: true
 date: 2023-06-16 08:06:00-05:00
 layout: post
 slug: oobabooga-fedora-38
-title: Installing Stable Diffusion on Fedora 38 (with podman!)
+title: Installing Oobabooga LLM text webui on Fedora 38 (with podman!)
 category: nfvpe
 ---
 

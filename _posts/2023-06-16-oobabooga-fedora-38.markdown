@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2023-05-06 08:06:00-05:00
+date: 2023-06-16 08:06:00-05:00
 layout: post
 slug: oobabooga-fedora-38
 title: Installing Stable Diffusion on Fedora 38 (with podman!)

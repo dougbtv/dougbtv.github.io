@@ -1,0 +1,209 @@
+---
+author: dougbtv
+comments: true
+date: 2024-01-12 08:00:00-05:00
+layout: post
+slug: kni-demo
+title: Reimagine Kubernetes networking, let's get a KNI (Kubernetes Networking Interface/reImagined) demo going!
+category: nfvpe
+---
+
+# Reimagine Kubernetes networking, let's get a KNI (Kubernetes Networking Interface/reImagined) demo going!
+
+Today we're going to get a demo for Kubernetes Networking Interface (KNI) rolling! If you wanna skip the preamble and get to the terminal, skip down to the requirements.
+
+What is KNI? It's a *"Foundational gRPC Network API specific for Kubernetes"*, and it *"revisit[s] past decisions for location of pod network setup/teardow"*, and in my words, it's an amazing way for us to think about deeper integration for network plugins in the context of Kubernetes, a kind of next level for what we can only solve today using CNI (the container networking interface).
+
+[Mike Zappa](https://github.com/MikeZappa87), sig-network chair, CNI maintainer, containerd contributor and technical rock climber, has been spearheading an effort to bridge the gap for network implementations for Kubernetes, and if you want to see some more of what [Zappa](https://github.com/MikeZappa87) is thinking, check out this presentation: ["KNI [K8s Network Interface]"](https://docs.google.com/presentation/d/1n-JrQ07gXPrF37jawDunqZlLJFziCZse-aVzFYPLYTQ/edit#slide=id.p). 
+
+And, maybe if I'm lucky, and Mike likes crack climbing someday I can get Mike to climb [Upper West](https://cragvt.org/upper-west/) in the "[tough schist](https://www.vermontrock.com/)" my neighborhood, I'll just hike to the base though, I'm just [your average granola crunching telemark hippy](https://www.reddit.com/r/skiing/comments/f4rul2/trying_to_catch_this_asshole_who_stole_my_granola/), but I love alpine travel myself.
+
+Remember when I gave a talk on "[CNI 2.0: Vive la revolution!](https://archive.fosdem.org/2023/schedule/event/cni_2_0/)", I wrote that:
+
+> Did you know CNI is container orchestration agnostic? It’s not Kubernetes specific. Should it stay that way? People are looking for translation layers between Kubernetes and CNI itself.
+
+What I'm talking about is that Container Networking Interface (CNI) (which I know, and love!), it's not purpose built for Kubernetes. It's orchestration engine agnostic -- remember when people talked about different orchestration engines for containers? Like Mesos, or, wait? I can't think of more for the life of me... It's for a good reason I can't think of another right now: Kubernetes is *the* container orchestration engine. CNI predates the meteoric rise of Kubernetes, and CNI has lots of great things going for it -- it's modular, it has an ecosystem, and it's got a specification that I think is simple to use and to understand. I love this. But, I'm both a network plugin developer as well as a Kubernetes developer, I want to write tools that both do the networking jobs I need to do, but also integrate with Kubernetes. I need a layer that enables this, and... KNI sure looks like just the thing to bring the community forward. I think there's a lot of potential here for how we think about extensibility for networking in Kubernetes with KNI, and it might be a great place to do a lot of integrations for Kubernetes, such as [Kubernetes Native Multi-networking [KEP]](https://github.com/kubernetes/enhancements/pull/3700), [dynamic resource allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/), and maybe even [gateway API](https://gateway-api.sigs.k8s.io/), and my gears are turning on how to use to further the technology created by [the Network Plumbing Working Group community](https://github.com/k8snetworkplumbingwg/community).
+
+As a maintainer of [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni), which can provide multiple interfaces to pods in Kubernetes by allowing users the ability to specify CNI configurations in Kubernetes custom resources, we have a project which does both of these things:
+
+* It can execute CNI plugins
+* It can operate within Kubernetes
+
+Creative people that are looking to couple richer Kubernetes interaction with their CNI plugins look at Multus as a way to potentially act as a Kubernetes runtime. I love this creative usage, and I encourage it as much as it makes sense. But, it's not really what Multus is designed for, Multus is designed for multi-networking specifically (e.g. giving multiple interfaces for a pod). It just happens to do both of these things well. What we really need is something that's lofted up another layer with deeper Kubernetes intergration -- and that something... Is KNI! And this is just the tip of the iceberg.
+
+But on to today: Let's get the KNI demo rocking and rolling.
+
+*Disclaimer!* This does use code and branches that could see significant change. But, hopefully it's enough to get you started.
+
+## Requirements
+
+* A machine running Fedora 38 (should be easy enough to pick another distro, though)
+* A basic ability to surf around Kubernetes.
+* A roobois latte (honestly you don't need coffee for this one, it's smooth sailing)
+
+## What we're gonna do...
+
+For this demo, we actually replace a good few core components with modified versions...
+
+* The Kubelet as part of Kubernetes
+* We'll replace containerd with a modified one.
+* And we'll install a "network runtime"
+
+Under KNI, a "network runtime" is your implementation where you do the fun stuff that you want to do. In this case, we just have a basic runtime that Zappa came up with that calls CNI. So, it essentially exercises stuff that you should already have, but we'll get to see where it's hooked in when we've got it all together.
+
+Ready? Let's roll.
+
+## System basics setup
+
+First I installed Fedora 38. And then, you might want to install some things you might need...
+
+```
+dnf install -y wget make task
+```
+
+Then, [install go 1.21.6](https://go.dev/doc/install)
+
+```
+sudo tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz
+```
+
+Setup your path, etc.
+
+[Install kind](https://kind.sigs.k8s.io/)
+
+```
+go install sigs.k8s.io/kind@v0.20.0
+```
+
+[Install docker](https://docs.docker.com/engine/install/fedora/)
+
+...From their steps.
+
+And add yourself as a user from the [post install docs](https://docs.docker.com/engine/install/linux-postinstall/)
+
+[Install kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+
+```
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo mv kubectl /usr/bin/
+sudo chmod +x /usr/bin/kubectl
+```
+
+Make sure kind can run with:
+
+```
+kind create cluster
+kubectl cluster-info --context kind-kind
+kind delete cluster
+```
+
+## Now let's spin up Zappa's Awesomeness
+
+Alright, next we're going to install and build from a bunch of repositories.
+
+### Demo repo
+
+Mike's got a repo together which spins up the demo for us... So, let's get that first.
+
+Note that I also have a fork and a branch on it with one of my own tweaks, we'll use that.
+
+```
+git clone https://github.com/MikeZappa87/kni-demo.git
+cd kni-demo
+# Check my branch of it repo...
+git remote add dougbtv https://github.com/dougbtv/kni-demo.git
+git fetch dougbtv
+git checkout dougbtv/flannel-bridge
+mkdir -p bin
+```
+
+### K8s repo
+
+Mike's k8s repo
+
+```
+git clone https://gitask build-server && cp ./bin/server ../bin/binthub.com/MikeZappa87/kubernetes.git
+cd kubernetes/
+git checkout poc/kni
+```
+
+Now let's build it...
+
+```
+CGO_ENABLED=0 make WHAT='cmd/kubelet'
+cp ./_output/bin/kubelet ../kni-demo/bin/
+```
+
+### Containerd
+
+Clone and build containerd
+
+```
+git clone https://github.com/MikeZappa87/containerd.git
+cd containerd
+git checkout feature/KNI-v2
+CGO_ENABLED=0 make binaries
+cp ./bin/containerd ../kni-demo/bin/
+```
+
+### Network runtime
+
+And you're gonna need the network runtime...
+
+```
+git clone https://github.com/MikeZappa87/kni-network-runtime.git
+cd kni-network-runtime/
+# Use this if you have task...
+# task build-server
+# Or if you're like me and struggled...
+CGO_ENABLED=0 go build -o ./bin/network-runtime cmd/server/server.go
+cp bin/network-runtime ../kni-demo/bin/
+```
+
+### CNI plugins
+
+```
+git clone https://github.com/containernetworking/plugins.git
+cp bin/bridge ../kni-demo/bin
+```
+
+## Now let's run the setup.sh from the kni-demo
+
+*NB*: I have a modified setup.sh which installs the bridge CNI plugin (via `docker cp`).
+
+```
+./setup.sh
+wget -o flannel.yml https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+kubectl create -f kube-flannel.yml
+```
+
+## Let's let 'er rip and see the KNI runtime go!
+
+Then create a pod...
+
+```
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: samplepod
+spec:
+  containers:
+  - name: samplepod
+    command: ["/bin/ash", "-c", "trap : TERM INT; sleep infinity & wait"]
+    image: alpine
+EOF
+```
+
+Let 'er come up, and...
+
+```
+$ docker exec -it test1-worker systemctl status kni
+● kni.service
+[...]
+Jan 12 18:20:16 test1-worker network-runtime[576]: {"level":"info","msg":"ipconfigs received for id: e42ffb53c0021a8d6223bc324e7771d31910e6973c7fea708ee3f673baac9a1f ip: map[cni0:mac:\"36:e0:1f:e6:21:bf\" eth0:ip:\"10.244.1.3\" mac:\"a2:19:92:bc:f1:e9\" lo:ip:\"127.0.0.1\" ip:\"::1\" mac:\"00:00:00:00:00:00\" vetha61196e4:mac:\"62:ac:54:83:31:31\"]","time":"2024-01-12T18:20:16Z"}
+```
+
+Voila! We can see that KNI processed, it has all that information about the pod networking which it's showing us!
+
+But, this is only the tip of the iceberg! While we're not doing a lot here other than saying "Cool, you can run Flannel", for the next episode... We'll look at creating a Hello World for a KNI runtime!

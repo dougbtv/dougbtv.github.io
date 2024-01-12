@@ -1,14 +1,12 @@
 ---
 author: dougbtv
 comments: true
-date: 2024-01-12 08:00:00-05:00
+date: 2024-01-12 08:01:00-05:00
 layout: post
 slug: kni-demo
 title: Reimagine Kubernetes networking, let's get a KNI (Kubernetes Networking Interface/reImagined) demo going!
 category: nfvpe
 ---
-
-# Reimagine Kubernetes networking, let's get a KNI (Kubernetes Networking Interface/reImagined) demo going!
 
 Today we're going to get a demo for Kubernetes Networking Interface (KNI) rolling! If you wanna skip the preamble and get to the terminal, skip down to the requirements.
 
@@ -162,6 +160,8 @@ cp bin/network-runtime ../kni-demo/bin/
 
 ### CNI plugins
 
+Build the CNI plugins because we'll use the `bridge` CNI plugin which flannel uses internally.
+
 ```
 git clone https://github.com/containernetworking/plugins.git
 cp bin/bridge ../kni-demo/bin
@@ -169,15 +169,20 @@ cp bin/bridge ../kni-demo/bin
 
 ## Now let's run the setup.sh from the kni-demo
 
-*NB*: I have a modified setup.sh which installs the bridge CNI plugin (via `docker cp`).
+*NB*: [I have a modified setup.sh](https://github.com/dougbtv/kni-demo/blob/flannel-bridge/setup.sh#L17) which installs the bridge CNI plugin (via `docker cp`).
 
 ```
 ./setup.sh
+```
+
+After that, we'll install flannel as our default CNI plugin.
+
+```
 wget -o flannel.yml https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
 kubectl create -f kube-flannel.yml
 ```
 
-## Let's let 'er rip and see the KNI runtime go!
+## Let it rip and watch the KNI runtime go!
 
 Then create a pod...
 
@@ -195,7 +200,7 @@ spec:
 EOF
 ```
 
-Let 'er come up, and...
+Let it come up, and you can see the last log item from kni...
 
 ```
 $ docker exec -it test1-worker systemctl status kni

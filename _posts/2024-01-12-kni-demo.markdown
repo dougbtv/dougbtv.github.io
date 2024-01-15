@@ -120,7 +120,7 @@ mkdir -p bin
 Mike's k8s repo
 
 ```
-git clone https://gitask build-server && cp ./bin/server ../bin/binthub.com/MikeZappa87/kubernetes.git
+git clone https://github.com/MikeZappa87/kubernetes.git
 cd kubernetes/
 git checkout poc/kni
 ```

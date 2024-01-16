@@ -10,7 +10,7 @@ category: nfvpe
 
 Today we're going to get a demo for Kubernetes Networking Interface (KNI) rolling! If you wanna skip the preamble and get to the terminal, skip down to the requirements.
 
-What is KNI? It's a *"Foundational gRPC Network API specific for Kubernetes"*, and it *"revisit[s] past decisions for location of pod network setup/teardow"*, and in my words, it's an amazing way for us to think about deeper integration for network plugins in the context of Kubernetes, a kind of next level for what we can only solve today using CNI (the container networking interface).
+What is KNI? It's a *"Foundational gRPC Network API specific for Kubernetes"*, and it *"revisit[s] past decisions for location of pod network setup/teardown"*, and in my words, it's an amazing way for us to think about deeper integration for network plugins in the context of Kubernetes, a kind of next level for what we can only solve today using CNI (the container networking interface).
 
 [Mike Zappa](https://github.com/MikeZappa87), sig-network chair, CNI maintainer, containerd contributor and technical rock climber, has been spearheading an effort to bridge the gap for network implementations for Kubernetes, and if you want to see some more of what [Zappa](https://github.com/MikeZappa87) is thinking, check out this presentation: ["KNI [K8s Network Interface]"](https://docs.google.com/presentation/d/1n-JrQ07gXPrF37jawDunqZlLJFziCZse-aVzFYPLYTQ/edit#slide=id.p). 
 
@@ -103,7 +103,7 @@ Alright, next we're going to install and build from a bunch of repositories.
 
 Mike's got a repo together which spins up the demo for us... So, let's get that first.
 
-Note that I also have a fork and a branch on it with one of my own tweaks, we'll use that.
+Update! There's a sweet new way to run this that saves a bunch of manual steps, so we'll use that now.
 
 ```
 git clone https://github.com/MikeZappa87/kni-demo.git

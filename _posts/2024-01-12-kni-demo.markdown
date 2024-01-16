@@ -108,78 +108,7 @@ Note that I also have a fork and a branch on it with one of my own tweaks, we'll
 ```
 git clone https://github.com/MikeZappa87/kni-demo.git
 cd kni-demo
-# Check my branch of it repo...
-git remote add dougbtv https://github.com/dougbtv/kni-demo.git
-git fetch dougbtv
-git checkout dougbtv/flannel-bridge
-mkdir -p bin
-```
-
-### K8s repo
-
-Mike's k8s repo
-
-```
-git clone https://github.com/MikeZappa87/kubernetes.git
-cd kubernetes/
-git checkout poc/kni
-```
-
-Now let's build it...
-
-```
-CGO_ENABLED=0 make WHAT='cmd/kubelet'
-cp ./_output/bin/kubelet ../kni-demo/bin/
-```
-
-### Containerd
-
-Clone and build containerd
-
-```
-git clone https://github.com/MikeZappa87/containerd.git
-cd containerd
-git checkout feature/KNI-v2
-CGO_ENABLED=0 make binaries
-cp ./bin/containerd ../kni-demo/bin/
-```
-
-### Network runtime
-
-And you're gonna need the network runtime...
-
-```
-git clone https://github.com/MikeZappa87/kni-network-runtime.git
-cd kni-network-runtime/
-# Use this if you have task...
-# task build-server
-# Or if you're like me and struggled...
-CGO_ENABLED=0 go build -o ./bin/network-runtime cmd/server/server.go
-cp bin/network-runtime ../kni-demo/bin/
-```
-
-### CNI plugins
-
-Build the CNI plugins because we'll use the `bridge` CNI plugin which flannel uses internally.
-
-```
-git clone https://github.com/containernetworking/plugins.git
-cp bin/bridge ../kni-demo/bin
-```
-
-## Now let's run the setup.sh from the kni-demo
-
-*NB*: [I have a modified setup.sh](https://github.com/dougbtv/kni-demo/blob/flannel-bridge/setup.sh#L17) which installs the bridge CNI plugin (via `docker cp`).
-
-```
-./setup.sh
-```
-
-After that, we'll install flannel as our default CNI plugin.
-
-```
-wget -o flannel.yml https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
-kubectl create -f kube-flannel.yml
+task 01-init 02-build 03-setup
 ```
 
 ## Let it rip and watch the KNI runtime go!

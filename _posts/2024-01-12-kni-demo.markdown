@@ -12,7 +12,7 @@ Today we're going to get a demo for Kubernetes Networking Interface (KNI) rollin
 
 What is KNI? It's a *"Foundational gRPC Network API specific for Kubernetes"*, and it *"revisit[s] past decisions for location of pod network setup/teardown"*, and in my words, it's an amazing way for us to think about deeper integration for network plugins in the context of Kubernetes, a kind of next level for what we can only solve today using CNI (the container networking interface).
 
-[Mike Zappa](https://github.com/MikeZappa87), sig-network chair, CNI maintainer, containerd contributor and technical rock climber, has been spearheading an effort to bridge the gap for network implementations for Kubernetes, and if you want to see some more of what [Zappa](https://github.com/MikeZappa87) is thinking, check out this presentation: ["KNI [K8s Network Interface]"](https://docs.google.com/presentation/d/1n-JrQ07gXPrF37jawDunqZlLJFziCZse-aVzFYPLYTQ/edit#slide=id.p). 
+[Mike Zappa](https://github.com/MikeZappa87), sig-network chair, CNI maintainer, containerd contributor and sport climber/alpinist and trail runner, has been spearheading an effort to bridge the gap for network implementations for Kubernetes, and if you want to see some more of what [Zappa](https://github.com/MikeZappa87) is thinking, check out this presentation: ["KNI [K8s Network Interface]"](https://docs.google.com/presentation/d/1n-JrQ07gXPrF37jawDunqZlLJFziCZse-aVzFYPLYTQ/edit#slide=id.p). 
 
 And, maybe if I'm lucky, and Mike likes crack climbing someday I can get Mike to climb [Upper West](https://cragvt.org/upper-west/) in the "[tough schist](https://www.vermontrock.com/)" my neighborhood, I'll just hike to the base though, I'm just [your average granola crunching telemark hippy](https://www.reddit.com/r/skiing/comments/f4rul2/trying_to_catch_this_asshole_who_stole_my_granola/), but I love alpine travel myself.
 
@@ -104,6 +104,8 @@ Alright, next we're going to install and build from a bunch of repositories.
 Mike's got a repo together which spins up the demo for us... So, let's get that first.
 
 Update! There's a sweet new way to run this that saves a bunch of manual steps, so we'll use that now.
+
+Thanks Tomo for making this much easier!!
 
 ```
 git clone https://github.com/MikeZappa87/kni-demo.git

@@ -7,7 +7,7 @@ permalink:        pretty
 # Setup
 title:            dougbtv
 tagline:          'slangin code in burlington, vt'
-description:      'Linux. NFV. Containers. Asterisk. Full-stack JavaScript. Web apps. μC&rsquo;s. <a href="https://twitter.com/dougbtv" target="_blank">@dougbtv</a>.'
+description:      'Linux. AI/ML. CNI. Kubernetes. NFV. Containers. Asterisk. <a href="https://twitter.com/dougbtv" target="_blank">@dougbtv</a>.'
 url:              http://dougbtv.com/
 baseurl:          /
 

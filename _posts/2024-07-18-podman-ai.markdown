@@ -1,0 +1,284 @@
+---
+author: dougbtv
+comments: true
+date: 2024-01-12 08:01:00-05:00
+layout: post
+slug: podman-ai
+title: Let's try Podman Desktop's AI Lab
+category: nfvpe
+---
+
+We're going to try to get some AI/ML workloads running using [Podman Desktop](https://podman-desktop.io)'s new [AI Lab](https://podman-desktop.io/docs/ai-lab) Feature!
+
+Podman Desktop, in the project's words, is:
+
+> an open source graphical tool enabling you to seamlessly work with containers and Kubernetes from your local environment.
+
+If you just want to get on to reference my steps in how I got it rolling, just skip down to the pre-reqs, otherwise...
+
+I was inspired by [this post on linked in](https://www.linkedin.com/posts/angrimes_opensource-redhat-openshift-activity-7217225424035098624-EF9y?utm_source=share&utm_medium=member_desktop) talking about an AI lab using podman, and since I already , and I was like "let's try this new [podman ai lab](https://podman-desktop.io/docs/ai-lab) thing!", and I wanted to see if I could get my current containerized workloads (especially for Stable Diffusions) which are running managed by podman desktop and it's new AI features. That post especially pumped up [this repo about running podman ai lab on openshift AI](https://github.com/redhat-ai-services/podman-ai-lab-to-rhoai), and I was really hopeful for managing my workloads, running in Kubernetes, from a GUI that integrated with podman.
+
+However, I found a few limitations for myself and my own use case... I don't currently have access to a lab running OpenShift AI -- which requires an OpenShift install to begin with. I'd really rather use my local lab, because I'm trying to get hands on with my environment, and... An OpenShift environment is going to be little sipping water from a firehose. So, what about another way to run Kubernetes?
+
+And then I ran into a number of other limitations...
+
+I was originally hoping that I could get my workloads running in K8s, and maybe even in kind (kubernetes in docker) because it's often used for local dev, but... I'm not sure we're going to see GPU functionality in kind at the moment (even if someone put together a [sweet hack](https://jacobtomlinson.dev/posts/2022/quick-hack-adding-gpu-support-to-kind/) [that's now a little outdated]). 
+
+And, I had trouble getting it to cooperate with GPU allocations for my workloads in general. I know, GUIs can be limited in terms of options, but, at almost every turn I couldn't easily spin up a workload with GPU access.
+
+Unfortunately, this is kind of a disappointment compared to say [ollama](https://ollama.com/), which does spin up LLMs using GPU inferrence quickly, and containerized on my local machine. But! I'll keep tracking it to see how it progresses.
+
+However! Podman Desktop is still really neat, and it's beautifully made, and overall, mostly intuitive. A few things tripped me up, but maybe you'll learn from what I did...
+
+## Pre-requisities
+
+I'm on fedora 39, I happened to install a workstation variant because it's handy to have the GUI for other ai/ml software I use (notably, kohya_ss, which I apparently need xwindows for)
+
+I also wound up installing a number of other things to get podman + my nvidia 3090 working originally, but! [I did document the steps I took in this blog article about using ooba on Fedora](https://dougbtv.com/nfvpe/2023/06/16/oobabooga-fedora-38/) so that could be a good reference if something isn't adding up.
+
+## Installing podman desktop
+
+I used: [https://podman-desktop.io/downloads](https://podman-desktop.io/downloads) to start my install.
+
+
+So, I'm not a huge flatpak user, I have used it on my steam deck, but, let's try it on fedora...
+
+```
+flatpak install flathub io.podman_desktop.PodmanDesktop
+```
+
+...You might want to run it as `sudo` because I had to auth a buuuunch from the GUI.
+
+Simple enough, I hit the windoze key and typed in "podman" from Gnome and there it is "Podman Desktop"
+
+I ran through the setup with all the defaults, just basically me hitting next and then typing in my r00t password a bunch of times.
+
+Then I hit the containers window to see what's running -- ah ha! Indeed, my kohya ss that I have running in podman is showing up in the list, hurray!
+
+### Installing kind
+
+So, apparently there's a bunch of Kubernetes-type features with podman desktop, and it must use [KIND](https://kind.sigs.k8s.io/) -- kubernetes-in-docker.
+
+I don't have this installed on this machine, so, there was a warning icon along the bottom of my podman desktop with a note about kind, I clicked it, and... yep, installed kind.
+
+I ran a:
+
+```
+kind get clusters
+```
+
+from the CLI, but, nothing shows, so I [checked the docs](https://podman-desktop.io/docs/kind/installing).
+
+So, let's try creating a pod...
+
+From the "pod" section of podman I go to create a pod, which, gives me a CLI item to paste:
+
+```
+podman pod create --label myFirstPod
+```
+
+However, this doesn't appear to have created a kind cluster behind the scenes, weird, so I try using the "Deploy generated pod to Kubernetes" option... Nothing!
+
+And I notice a message `Cluster Not Reachable` as a status from my Pod section of podman desktop.
+
+So, let's dig into this...
+
+Let's use the [podman desktop kind docs](https://podman-desktop.io/docs/kind).
+
+Since I have the `kind` CLI installed, now I have to [create a kind cluster myself](https://podman-desktop.io/docs/kind/creating-a-kind-cluster).
+
+We can do this through the `Settings -> Resources` part of desktop.
+
+In the podman box, there's a "create kind cluster" button, and I just used the defaults (which even includes countour for ingress), and there's a "show logs" portion, which I followed along on.
+
+Now when I run `kind get clusters` I can see one! Cool.
+
+And lastly, we're going to need a [Kubernetes context](https://podman-desktop.io/docs/kind/working-with-your-local-kind-cluster)
+
+However, without doing anything, I can see at the CLI:
+
+```
+$ kubectl config current-context
+kind-kind-cluster
+```
+
+Seems good, and where I used to `Cluster not reachable` I now see `Connected`! Let's test drive it...
+
+Also note that there's a dark purple bar at the bottom of the podman desktop UI that has a k8s icon and the name of your cluster, you could switch to another cluster from there (even a remote openshift one, too)
+
+## Getting a pod running on kind from Podman Desktop
+
+I didn't have good luck at first. I'd run the `podman pod create` copied from the UI again, Using the `...` context menu on my pod named `hungry_ramanujan`, I run `Deploy the Kubernetes` and use the default options... And I wait, without output... And it's just hanging there for a half hour or better! So I tried running the flatpak interactively with `flatpak run io.podman_desktop.PodmanDesktop` to see if I got any actionable log output -- I didn't.
+
+So I tried another approach...
+
+First, I pulled an image to test with `podman pull quay.io/fedora/fedora` (I actually used the UI for fun). Then from the images tab, I used the `...` context menu to push to kind.
+
+Then, I hit the play button for the fedora image, kept all the defaults, and after I acccept it sends me to the container details, and you'll have tabs for `summary/logs/inspect/kube/terminal/tty`
+
+The `Kube` tab has conveniently generated a pod spec for me, which is:
+
+```
+# Save the output of this file and use kubectl create -f to import
+# it into Kubernetes.
+#
+# Created with podman-4.9.4
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2024-07-19T12:44:38Z"
+  labels:
+    app: romanticmcclintock-pod
+  name: romanticmcclintock-pod
+spec:
+  containers:
+  - env:
+    - name: TERM
+      value: xterm
+    image: quay.io/fedora/fedora:latest
+    name: romanticmcclintock
+    stdin: true
+    tty: true
+```
+
+(you can also do this at the CLI with `podman generate kube my-silly-container-name`)
+
+Great, now we should be able to hit the rocket ship icon to deploy to our pod to kind... you'll get a few options, I kept the defaults and hit deploy...
+
+```
+doug@stimsonmt:~/ai-ml/kohya_ss$ kubectl get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+romanticmcclintock-pod   1/1     Running   0          23s
+```
+
+Looks good! Awesome.
+
+## Let's see what it can do with my current workloads!
+
+So I already have [the Kohya SS GUI](https://github.com/bmaltais/kohya_ss) running in a podman container, here's the bash script I use to kick mine off...
+
+```
+#!/bin/bash
+# -e DISPLAY=0:0 \
+PORT=7860
+screen -S kohya podman run \
+-e SAFETENSORS_FAST_GPU=1 \
+-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+-v /home/doug/ai-ml/kohya_ss/dataset:/dataset:rw \
+-v /home/doug/ai-ml/automatic/models/Stable-diffusion/:/models:rw \
+-v /home/doug/ai-ml/kohya_ss/.cache/user:/app/appuser/.cache:rw \
+-v /home/doug/ai-ml/kohya_ss/.cache/triton:/app/appuser/.triton:rw \
+-v /home/doug/ai-ml/kohya_ss/.cache/config:/app/appuser/.config:rw \
+-v /home/doug/ai-ml/kohya_ss/.cache/nv:/app/appuser/.nv:rw \
+-v /home/doug/ai-ml/kohya_ss/.cache/keras:/app/appuser/.keras:rw  \
+-p $PORT:7860 \
+--security-opt=label=disable \
+--device=nvidia.com/gpu=all \
+-i \
+--tty \
+--shm-size=512m \
+--user root \
+ghcr.io/bmaltais/kohya-ss-gui
+```
+
+Pay close attention to `--device=nvidia.com/gpu=all`, it's important because it's using [CDI, the container device interface](https://github.com/cncf-tags/container-device-interface), also check out [this nvidia article](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html). And it's the way that we say this workload should use a GPU, at the container level.
+
+And then if I inspect this in podman desktop `Kube` view, I get this yaml (that I snipped a little):
+
+```
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: affectionategould-pod
+  name: affectionategould-pod
+spec:
+  containers:
+  - args:
+    - python3
+    - kohya_gui.py
+    - --listen
+    - 0.0.0.0
+    - --server_port
+    - "7860"
+    - --headless
+    env:
+    - name: TERM
+      value: xterm
+    - name: SAFETENSORS_FAST_GPU
+      value: "1"
+    - name: DISPLAY
+      value: :1
+    image: ghcr.io/bmaltais/kohya-ss-gui:latest
+    name: affectionategould
+    ports:
+    - containerPort: 7860
+      hostPort: 7860
+    securityContext:
+      runAsGroup: 0
+      runAsNonRoot: true
+      runAsUser: 0
+      seLinuxOptions:
+        type: spc_t
+    stdin: true
+    tty: true
+    volumeMounts:
+      [..snip..]
+  volumes:
+    [..snip..]
+```
+
+While this is very very convenient, I'm not sure it's actually going to be allocated a GPU in my kind cluster -- which, might not even be possible. I did find [someone proposed a quick hack to add GPU support to kind](https://jacobtomlinson.dev/posts/2022/quick-hack-adding-gpu-support-to-kind/), and they have a PoC, but it's on an older Kubernetes. But there'd have to be something there that indicates a request for a GPU, right?
+
+That seems to be notably missing.
+
+I'll try to come back to my own use case later, in the meanwhile, let's see what podman AI lab can do...
+
+## Installing podman AI lab
+
+So, for this, I went and followed this article from Red Hat developer's blog about [Getting started with Podman AI Lab](https://developers.redhat.com/articles/2024/05/07/podman-ai-lab-getting-started#)
+
+Honestly, super simple, there's a "puzzle piece" icon/UI tab that's for Extensions -- just do a search for "lab" in the "catalog" tab, and... click install. that's it!
+
+Now, let's give it a test drive...
+
+Following the steps from the "[run LLMs locally](https://podman-desktop.io/docs/ai-lab)" podman desktop page, I go to download a model from the `Catalog` page, and...  they are listed as... to CPU models! Nooooo! We want to use GPUs.
+
+I download `ibm/merlinite-7b-GGUF` only because I recognize it from [Instruct Lab](https://www.redhat.com/en/topics/ai/what-is-instructlab). So let's give it a try and see what happens.
+
+I find that there's a "Services" section of Podman Desktop AI Lab, and it says that:
+
+> A model service offers a configurable endpoint via an OpenAI-compatible web server,
+
+Sounds like that should work, so I choose to start the model service with the "New Model Service" button, which shows the model I downloaded in a drop down. I get a warning that I don't have enough free memory, but I check `free -m` and I actually have 26gigs free, while it reports I have 346 megs.
+
+It pulls the `ghcr.io/containers/podman-desktop-extension-ai-lab-playground-images/ai-lab-playground-chat:0.3.2.` image for me.
+
+It shows I have an endpoint @ http://localhost:35127/v1 and it gives me some "client code" (a curl command"), and boo hoo.... Lists it with a CPU icon.
+
+```
+curl --location 'http://localhost:35127/v1/chat/completions' \
+--header 'Content-Type: application/json' \
+--data '{
+  "messages": [
+    {
+      "content": "You are an artist from the latter half of the 1800s, skilled at explaining programming concepts using vocabulary associated with art from the Academism, Realism and Impressionist periods.",
+      "role": "system"
+    },
+    {
+      "content": "Describe what a pointer is",
+      "role": "user"
+    }
+  ]
+}'
+```
+
+I give this a run, and... unfortunately, it's.... verrrrry slow.
+
+```
+Ah, dear interlocutor! A pointer in the realm of programming is akin to a skilled craftsman's chisel, guiding and shaping the very essence of data. It is a variable that stores the memory address of another variable, allowing us to indirectly access and manipulate the value it points to. In the spirit of the Impressionist period, one could liken it to a painter's brush, subtly yet powerfully influencing the overall composition of our code. [...more drivel snipped!...]
+```
+
+Typical LLM yammering, but, it works!!
+

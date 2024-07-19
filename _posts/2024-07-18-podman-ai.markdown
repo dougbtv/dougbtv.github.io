@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2024-01-12 08:01:00-05:00
+date: 2024-07-18 08:01:00-05:00
 layout: post
 slug: podman-ai
 title: Let's try Podman Desktop's AI Lab
@@ -24,9 +24,13 @@ And then I ran into a number of other limitations...
 
 I was originally hoping that I could get my workloads running in K8s, and maybe even in kind (kubernetes in docker) because it's often used for local dev, but... I'm not sure we're going to see GPU functionality in kind at the moment (even if someone put together a [sweet hack](https://jacobtomlinson.dev/posts/2022/quick-hack-adding-gpu-support-to-kind/) [that's now a little outdated]). 
 
+*RECORD SCRATCH*: Wait up! It might be possible in KIND! I found an article about [K8s Kind with GPUs](https://www.substratus.ai/blog/kind-with-gpus). I gave it a whirl, and it might be a path forward, but I didn't have great success right out of the box, I think part of it is that we need a more feature rich runtime for kind, like [Antonio](https://github.com/aojea)'s gist about using [CRI-O + KIND](https://gist.github.com/aojea/bd1fb766302779b77b8f68fa0a81c0f2).
+
 And, I had trouble getting it to cooperate with GPU allocations for my workloads in general. I know, GUIs can be limited in terms of options, but, at almost every turn I couldn't easily spin up a workload with GPU access.
 
 Unfortunately, this is kind of a disappointment compared to say [ollama](https://ollama.com/), which does spin up LLMs using GPU inferrence quickly, and containerized on my local machine. But! I'll keep tracking it to see how it progresses.
+
+Also, I should note, some of my main gripes are actually with kind + GPU, and only somewhat with Podman Desktop, but, I feel like experiences like ollama are a lot more turnkey in part.
 
 However! Podman Desktop is still really neat, and it's beautifully made, and overall, mostly intuitive. A few things tripped me up, but maybe you'll learn from what I did...
 
@@ -231,9 +235,81 @@ spec:
 
 While this is very very convenient, I'm not sure it's actually going to be allocated a GPU in my kind cluster -- which, might not even be possible. I did find [someone proposed a quick hack to add GPU support to kind](https://jacobtomlinson.dev/posts/2022/quick-hack-adding-gpu-support-to-kind/), and they have a PoC, but it's on an older Kubernetes. But there'd have to be something there that indicates a request for a GPU, right?
 
+*RECORD SCRATCH*! Wait that might be wrong, I found [another approach for it](https://www.substratus.ai/blog/kind-with-gpus) -- that uses the nvidia GPU operator.
+
 That seems to be notably missing.
 
-I'll try to come back to my own use case later, in the meanwhile, let's see what podman AI lab can do...
+## Giving a shot at kind + GPU support (which didn't quite work!)
+
+I followed the steps @ https://www.substratus.ai/blog/kind-with-gpus and.... I didn't succeed, but! I think there might be hope in this method in the future.
+
+The first step is to use `nvidia-ctk` to set the runtime to `docker`, but, that's not a choice for us, and I checked the help and found that...
+
+```
+--runtime value           the target runtime engine; one of [containerd, crio, docker] (default: "docker")
+```
+
+That might be the death knell for this approach, but I'm going to carry on with skipping the step...
+
+I also set:
+
+```
+accept-nvidia-visible-devices-as-volume-mounts = true 
+```
+
+Now, time to create a new kind cluster...
+
+```
+kind create cluster --name kind-gpu-enabled --config - <<EOF
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+nodes:
+- role: control-plane
+  image: docker.io/kindest/node@sha256:047357ac0cfea04663786a612ba1eaba9702bef25227a794b52890dd8bcd692e
+  # required for GPU workaround
+  extraMounts:
+    - hostPath: /dev/null
+      containerPath: /var/run/nvidia-container-devices/all
+EOF
+```
+
+Which only worked for me as root.
+
+And I fire it up... Cluster comes up, but there's a workaround listed in the article, I skip it (makes a symlink for `/sbin/ldconfig.real`)
+
+And we're going to need helm with `dnf install helm`...
+
+Then, let's get the operator going...
+
+```
+helm repo add nvidia https://helm.ngc.nvidia.com/nvidia || true
+helm repo update
+helm install --wait --generate-name \
+     -n gpu-operator --create-namespace \
+     nvidia/gpu-operator --set driver.enabled=false
+```
+
+Aaaaand, all my pods hung. I did finally find this k8s event:
+
+```
+root@stimsonmt:~# kubectl describe pod gpu-feature-discovery-58k7c -n gpu-operator | grep -P -A5 "^Events:"
+Events:
+  Type     Reason                  Age                  From               Message
+  ----     ------                  ----                 ----               -------
+  Normal   Scheduled               3m39s                default-scheduler  Successfully assigned gpu-operator/gpu-feature-discovery-58k7c to kind-gpu-enabled-control-plane
+  Warning  FailedCreatePodSandBox  3s (x17 over 3m39s)  kubelet            Failed to create pod sandbox: rpc error: code = Unknown desc = failed to get sandbox runtime: no runtime for "nvidia" is configured
+```
+
+So I tried to hack in...
+
+```
+root@stimsonmt:/home/doug/ai-ml/helm# nvidia-ctk runtime configure --runtime=crio --set-as-default
+```
+
+But it had no effect, we're not really using crio (and it resulted in the same message, probably because crio hasn't kicked in, you know, at all).
+
+I did note that the cool SIG-Net dude [aojea](https://github.com/aojea) has a cool gist on [CRIO + KIND](https://gist.github.com/aojea/bd1fb766302779b77b8f68fa0a81c0f2), maybe for another day.
+
 
 ## Installing podman AI lab
 

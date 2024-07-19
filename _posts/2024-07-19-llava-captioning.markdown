@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2024-07-19 09:00:00-05:00
+date: 2024-07-19 09:01:00-05:00
 layout: post
 slug: llava-captioning
 title: Using LLaVA for captioning Stable Diffusion fine tuning datasets
@@ -35,9 +35,9 @@ I will also provide my own script to make API queries against ollama, but, I'll 
 
 First [get ollama installed](https://ollama.com/download/linux), it's a nicely packaged opionated way to get LLMs running in containers, which I quite like. If you wanna learn more about LLaVa on ollama, you can also check out this great [youtube video](https://www.youtube.com/watch?v=jXUv8mlQHq0) by Learn Data with Mark.
 
-Then I went and pulled this model..
+Then I went and pulled this model (you can pull it manually, or it should pull when you do `ollama run ...`):
 
-https://ollama.com/library/llava:13b
+[https://ollama.com/library/llava:13b](https://ollama.com/library/llava:13b)
 
 Ok, I go ahead and start ollama serve...
 
@@ -75,29 +75,25 @@ I saw on [reddit](https://www.reddit.com/r/StableDiffusion/comments/191u4rh/tagg
 So seems like there's two ways to do this...
 
 1. From the CLI I can provide a path to an image
-2. Via the API I can provide a base64 encoded (I think!) image
+2. Via the API I can provide a base64 encoded image
 
 we're going to use this library...
 
-https://pypi.org/project/ollama/
+[https://pypi.org/project/ollama/](https://pypi.org/project/ollama/)
 
 And take a look at the API docs...
 
-https://github.com/ollama/ollama/blob/main/docs/api.md
+[https://github.com/ollama/ollama/blob/main/docs/api.md](https://github.com/ollama/ollama/blob/main/docs/api.md)
 
-Later, I think we're going to create a modelfile -- later... https://github.com/ollama/ollama/blob/main/docs/modelfile.md -- there we can better define an overall system prompt.
+Later, I think we're going to create a modelfile -- for example... [https://github.com/ollama/ollama/blob/main/docs/modelfile.md](https://github.com/ollama/ollama/blob/main/docs/modelfile.md) -- there we can better define an overall system prompt.
 
 In the meanwhile -- we will just confidently emulate it.
 
-This is cool, we can set a system prompt and other stuff.
-
 For now though, I think I only need a little bit of context for my system prompt, so we'll just jam it right in.
 
-I'm using GPT-4 to feed in some info about the library and the API and having it whip me up something quick -- this script doesn't need to be intense, just an intro prompt and then a way to cycle through images and output a caption.
+I used GPT-4 to feed in some info about the library and the API and having it whip me up something quick -- this script doesn't need to be intense, just an intro prompt and then a way to cycle through images and output a caption.
 
 ## Using my [dougbtv/ollama-llava-captioner](https://github.com/dougbtv/ollama-llava-captioner) script
-
-Let's gooo....
 
 I put my quick scripts up on github  @ [dougbtv/ollama-llava-captioner](https://github.com/dougbtv/ollama-llava-captioner)
 
@@ -114,7 +110,6 @@ Completed 0.08% in 2.12s, estimated 2663.50s left.
 Processing 00764EBA-A1C4-4687-B45A-226973315006.jpg (2/1260)...
 Generated Caption:  An old, vintage black and white photograph depicting an early aviation scene. A seaplane is gliding over a serene lake nestled among pine trees and hills in the background, capturing a moment of adventure and exploration amidst nature's tranquility.
 Completed 0.16% in 4.16s, estimated 2615.48s left.
-
 ```
 
 It uses a kind of "pre prompt" to set up the instructions for captioning. I think you should probably tune this, so you can start with the `prompt.txt` in the root dir of the repo, and then modify it yourself, and you either just change it in place or run the script with a path to where your saved your modified (or new!) prompt.

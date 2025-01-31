@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-01-31 09:01:00-05:00
+date: 2025-01-31 09:02:00-05:00
 layout: post
 slug: k8s-dra-132
 title: Kubernetes Dynamic Resource Allocation (DRA) for... Networking?
@@ -64,15 +64,13 @@ Using DRA for these kind of cases represents a way to potentially simplify this,
 
 ## But, there's some potential downsides...
 
-Here's the other part... This... This might just totally bypass CNI. Which, basically every Kubernetes community user/operator/administrator really relies on today. It's THE way that we plumb network interfaces into pods. It's kind of the elephant in the room to me, there's sort of two sides to it...
+Here's the other part... This might just totally bypass CNI. Which, basically every Kubernetes community user/operator/administrator really relies on today. It's THE way that we plumb network interfaces into pods. It's kind of the elephant in the room to me, there's sort of two sides to it...
 
-CNI is "container orchestration agnostic" -- it's not Kubernetes specific. This had upsides on it's inception, and I believe was 100% community friendly approach, b
-ut... That means it doesn't have specific bindings for Kubernetes. If you're an "all day every day" kind of Kubernetes developer, CNI looks like a total non-sequito
-r which can only be described as "a total pain in the buns" (not hot dog buns, but, pain in the butt). If you want to hear more about this, check out [my lightning talk about this at FOSDEM in 2023](https://archive.fosdem.org/2023/schedule/event/cni_2_0/).
+CNI was designed to be “container orchestration agnostic”—not Kubernetes-specific. That was a smart, community-friendly move at the time, but it also means CNI doesn’t have deep Kubernetes integrations today. If you're an "all day every day" kind of Kubernetes developer, CNI looks like a total non-sequitur which can only be described as "a total pain in the buns" (not hot dog buns, but, pain in the butt). If you want to hear more about this, check out [my lightning talk about this at FOSDEM in 2023](https://archive.fosdem.org/2023/schedule/event/cni_2_0/).
 
 The other side is... CNI is also *extremely* modular, and allows components to interoperate. It allows you to customize your clusters and integrate say, your own solutions, with a primary CNI that you choose, and even integrate vendor solutions. If you're a cluster operator, this may matter to you A LOT. If you're a cloud operator -- maybe you don't care at all. You own the cluster and you configure it, the user is a "fool" who shouldn't touch that. To me, that does make sense from a market standpoint, but, I think it stinks from a consumer standpoint, and double stinks from a community standpoint.
 
-I won't name names, and you can figure it out for yourself if you dig deep enough -- but some public-cloud-focused organizations that contribute to Kubernetes, well, they just tear the whole Kubelet out and replace it with their own bespoke downstream proprietary thing. That... Is super weird to me, and while I can maybe understand why, I don't think our designs should be weighted towards those outcomes, our designs should be weighted towards the community, and the way that the community uses Kubernetes.
+I've noticed that some cloud providers contributing to Kubernetes replace the kubelet entirely with proprietary downstream solutions. While I get why they do it, it creates a disconnect between how Kubernetes is developed upstream and how users experience it in the real world. Our designs should prioritize the community’s needs first, not just cloud operator convenience.
 
 What I'm afraid of is that if we ignore CNI: We're going to blackbox things from people who do manage their own clusters. We might also blackbox it from people who support those clusters -- even in a proprietary public cloud provider context.
 

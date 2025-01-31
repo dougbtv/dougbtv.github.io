@@ -1,0 +1,564 @@
+---
+author: dougbtv
+comments: true
+date: 2025-01-31 09:01:00-05:00
+layout: post
+slug: k8s-dra-132
+title: Kubernetes Dynamic Resource Allocation (DRA) for... Networking?
+category: nfvpe
+---
+
+So, are you familiar with DRA? [Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) (k8s docs linked)? It's for "requesting and sharing resources between pods", like, if you've got a hardware resource you want to use, say, a GPU in your pod, or maybe you're, like, cooler than that and you wanna [connect a smart toaster](https://www.livinginternet.com/i/ia_myths_toast.htm) to your pods... Well, you could use DRA to help Kubernetes schedule your pod on a node that has a connected toaster, or, well, yeah a GPU. Popular for AI/ML or so I hear, have you? :)
+
+Today, we're going to chat about using DRA for networking, and I've got a pointer and an opinionated tutorial and how to run through using an example DRA driver so you can get your hands on it, and we'll -- so if you'd rather that, you can skip my rundown -- fire up your scroll wheel on turbo or start spamming page down!
+
+## DRA vs. Device Plugins
+
+It's starting to become a popular idea to use DRA for Networking. This isn't necessarily groundbreaking for networking in Kubernetes, you know, we do use hardware devices for networking, and indeed people have been using [Kubernetes device plugins](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/) to achieve this for networking. And in fact, the [SR-IOV network operator](https://github.com/k8snetworkplumbingwg/sriov-network-operator/blob/master/doc/quickstart.md) which is maintained by folks in the Network Plumbing Working Group (NPWG) uses device plugins to allocate high performance NICs to pods in Kubernetes. You, however, won't be surprised to hear that there was a community get together at the Nvidia HQ in California to form a working group which came up with the device plugin spec, back in 2018, I attended because, well, I'm a Kubernetes networking guy and I was also interested in making sure my pods wind up on nodes with available hardware resources for specialized and high performance networking.
+
+So -- why now is DRA becoming popular? Well, device plugins did "get 'er done" -- but, they are limited, at the end of the day, device plugins basically require that you have a daemon running on each node and advertise the availability of nodes to the Kubelet, basically as a simple counter, like, `chartek.io/toaster=5` if you've got 5 smart toasters connected to your node. Your daemon would realize one has been used and decrement the counter. With DRA -- we can have much richer expression of those toasters.  
+
+Now imagine, you've got a variety of toasters. So, it's like... Just saying 5 toasters isn't enough. Now you want to be able to use a toaster that has a bagel function, or one with computer vision to analyze your bread type, and actually, there's even [toasters that will toast a gosh dang hot dog](https://www.walmart.com/ip/Oscar-Mayer-Hotdog-Toaster-2-Slot-Retro-Toaster-for-Sausages-Brats-with-Mini-Tongs-Yellow/2820207369).
+
+![](https://i.imgur.com/mmlheT6.jpeg)
+
+Now here's the thing -- if you need to divvy up those resources, and share that technology between multiple pods... You can do that with DRA. So if you've got a need to have a pod using the hot dog slot and one using the bun slot -- you can do that. So, you could setup a resource class to divide the methods of your device, like so:
+
+```
+apiVersion: resource.k8s.io/v1beta1
+kind: ResourceClass
+metadata:
+  name: toaster-bun-slot
+driverName: burntek.io/bun-toaster
+---
+apiVersion: resource.k8s.io/v1beta1
+kind: ResourceClass
+metadata:
+  name: toaster-hotdog-slot
+driverName: burntek.io/hotdog-warmer
+```
+
+Whereas with device plugins -- you kind of have to allocate the whole toaster.
+
+This might seem ridiculous (because it is), but, there's an entire effort dedicated to ensuring that hot dog toasters work with Kubernetes -- I mean, [there's a whole effort dedicated to "Structured parameters for DRA"](https://github.com/kubernetes/enhancements/issues/4381), which I believe is related to the idea of allocating multiple workloads to a GPU, like say you have a GPU with 48 gigs of VRAM, if one workload claims it -- but it only uses 12 gigs of VRAM, well, the rest of the VRAM is kind of going to waste, so, you could allocate multiple.  
+
+Think of it this way...
+
+**Device plugins**: Ask for a toaster, you get a toaster, that's it.
+
+**DRA**: Ask for a toaster, and the toasting technologies, and you get the precise toaster you need, allocated at scheduling time, and shared with the right pods.
+
+## Why DRA for networking?
+
+See -- this is what's cool about Kubernetes, it's an awesome scheduler -- it gets your workloads running in the right places. But, it doesn't know a whole lot about networking, for the most part it just knows the IP addresses of your pods, and indeed it can proxy traffic to them with [Kube proxy](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/), but... For the most part, Kubernetes doesn't want to mess with infrastructure specific know-how. Which is why we've got [CNI -- the container networking interface](https://github.com/containernetworking). With CNI, we can kind of free Kubernetes from having infrastructure specific know how, and let your CNI plugin do all the heavy lifting.
+
+Device plugins, while they could do the job generally, have only that counter. This was also a big challenge with SR-IOV. You see, device plugins kind of weren't really designed for networking either, and here's the thing...
+
+The design of device plugins was weighted towards allocating compute devices, like GPUs and FPGAs. SR-IOV network devices don't need *just* allocation, they also need *configuration*. 
+
+So, the Network Plumbing Working Group put together, "The Device Info Spec", see: https://github.com/k8snetworkplumbingwg/device-info-spec
+
+This allowed us to store some configurations, which we laid down on disk on nodes, in order for the terminal CNI plugin to pick up that configuration information, which we needed to do at the time, but... It's got a lot of moving parts, including the use of Multus CNI as an intermediary to pass that information along. I'm a Multus CNI maintainer and I sort of wince whenever I have to go near that code to be frank with you. And when I say "frank" -- I don't mean frankfurters (actually, yes I do).
+
+Using DRA for these kind of cases represents a way to potentially simplify this, we can have customized parameters that go all the way down, without having to have some kind of intermediary.
+
+## But, there's some potential downsides...
+
+Here's the other part... This... This might just totally bypass CNI. Which, basically every Kubernetes community user/operator/administrator really relies on today. It's THE way that we plumb network interfaces into pods. It's kind of the elephant in the room to me, there's sort of two sides to it...
+
+CNI is "container orchestration agnostic" -- it's not Kubernetes specific. This had upsides on it's inception, and I believe was 100% community friendly approach, b
+ut... That means it doesn't have specific bindings for Kubernetes. If you're an "all day every day" kind of Kubernetes developer, CNI looks like a total non-sequito
+r which can only be described as "a total pain in the buns" (not hot dog buns, but, pain in the butt). If you want to hear more about this, check out [my lightning talk about this at FOSDEM in 2023](https://archive.fosdem.org/2023/schedule/event/cni_2_0/).
+
+The other side is... CNI is also *extremely* modular, and allows components to interoperate. It allows you to customize your clusters and integrate say, your own solutions, with a primary CNI that you choose, and even integrate vendor solutions. If you're a cluster operator, this may matter to you A LOT. If you're a cloud operator -- maybe you don't care at all. You own the cluster and you configure it, the user is a "fool" who shouldn't touch that. To me, that does make sense from a market standpoint, but, I think it stinks from a consumer standpoint, and double stinks from a community standpoint.
+
+I won't name names, and you can figure it out for yourself if you dig deep enough -- but some public-cloud-focused organizations that contribute to Kubernetes, well, they just tear the whole Kubelet out and replace it with their own bespoke downstream proprietary thing. That... Is super weird to me, and while I can maybe understand why, I don't think our designs should be weighted towards those outcomes, our designs should be weighted towards the community, and the way that the community uses Kubernetes.
+
+What I'm afraid of is that if we ignore CNI: We're going to blackbox things from people who do manage their own clusters. We might also blackbox it from people who support those clusters -- even in a proprietary public cloud provider context.
+
+CNI provides a lingua franca for this kind of work with networking.
+
+## On the bright side...
+
+We might have a better world coming! And there's a lot of people working VERY hard to make it happen.
+
+I think that potentially that [the CNI DRA driver](https://github.com/kubernetes-sigs/cni-dra-driver) is probably the thing that will help us iron out a bunch of these kinks.
+
+The primary author and legendary rad developer, [Lionel Jouin](https://github.com/LionelJouin) has been doing A LOT in this space, and has been putting together some excellent PoCs for quite a while to really explore the space.
+
+Lionel was also pivotal in getting a "resource claim status" enabled -- see: https://github.com/kubernetes/enhancements/issues/4817 & https://github.com/kubernetes/kubernetes/pull/128240
+ 
+Keep your eyes on the DRA CNI driver repo and track it -- and, best yet -- think about contributing to it.
+
+Also, you should check out [this KEP to support dynamic device provisioning](https://github.com/kubernetes/enhancements/issues/5075) from [Sunyanan Choochotkaew](https://github.com/sunya-ch) which also helps to address some challenges found when working through the DRA CNI driver.
+
+## Other resources to check out...
+
+* [DRAcon: Demystifying DRA](https://www.youtube.com/watch?v=u7CktFEJbS8) on YT, at Kubecon EU 2024
+* If you're interested in DRA, you should also see [this awesome article by Saifeddine Rajhi](https://seifrajhi.github.io/blog/k8s-dynamic-resource-allocation-dra/).
+
+## Let's get onto the tutorial!
+
+Pre-reqs...
+
+* Fedora (but you could adapt it to your own system)
+
+Get docker installed...
+
+```
+sudo dnf -y install dnf-plugins-core
+sudo dnf-3 config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
+docker ps
+```
+
+Install kind:
+
+```
+[ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.24.0/kind-linux-amd64
+chmod +x ./kind
+sudo mv ./kind /usr/local/bin/kind
+kind version
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+kubectl version
+```
+
+And you'll need `make`.
+
+```
+sudo dnf install -y make
+```
+
+Install helm (dangerously!)
+
+```
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+```
+
+And then we're going to want to spin up a registry in kind
+
+I use [the instructions from kind](https://kind.sigs.k8s.io/docs/user/local-registry/) -- which includes a script. I ran that without mod.
+
+Push an image to localhost:5000/foo/bar:quux to see if it works.
+
+Install go.
+
+```
+wget https://go.dev/dl/go1.23.4.linux-amd64.tar.gz
+sudo rm -rf /usr/local/go 
+sudo tar -C /usr/local -xzf go1.23.4.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+
+```
+
+## Spinning up the DRA example driver.
+
+This is -- basically right from the DRA example driver README, but, with my own experience, and install steps for the tools above, of course... But, let's check it out to see the basics.
+
+Then I checked out...
+
+```
+git clone https://github.com/kubernetes-sigs/dra-example-driver.git
+cd dra-example-driver
+```
+
+From there, I spun up a 1.32 cluster...
+
+```
+./demo/create-cluster.sh
+```
+
+Build and install the example driver image...
+
+```
+./demo/build-driver.sh
+# You could load or reload it...
+kind load docker-image --name dra-example-driver-cluster registry.example.com/dra-example-driver:v0.1.0
+# and where its used from...
+cat deployments/helm/dra-example-driver/values.yaml | grep registry
+```
+
+And helm install it:
+
+
+```
+helm upgrade -i \
+  --create-namespace \
+  --namespace dra-example-driver \
+  dra-example-driver \
+  deployments/helm/dra-example-driver
+```
+
+And that it works.
+
+```
+kubectl get pod -n dra-example-driver
+```
+
+Now, you'll see they created resource slices...
+
+```
+kubectl get resourceslice -o yaml
+```
+
+You could also use their spinup, and config, which I borrowed from.
+
+```
+./demo/create-cluster.sh
+# You can check out what's in their config with:
+cat ./demo/scripts/kind-cluster-config.yaml
+```
+
+Run their example...
+
+```
+kubectl apply --filename=demo/gpu-test{1,2,3,4,5}.yaml
+```
+
+And use their... bashy script to see the results...
+
+```
+#!/bin/bash
+for example in $(seq 1 5); do \
+  echo "gpu-test${example}:"
+  for pod in $(kubectl get pod -n gpu-test${example} --output=jsonpath='{.items[*].metadata.name}'); do \
+    for ctr in $(kubectl get pod -n gpu-test${example} ${pod} -o jsonpath='{.spec.containers[*].name}'); do \
+      echo "${pod} ${ctr}:"
+      if [ "${example}" -lt 3 ]; then
+        kubectl logs -n gpu-test${example} ${pod} -c ${ctr}| grep -E "GPU_DEVICE_[0-9]+=" | grep -v "RESOURCE_CLAIM"
+      else
+        kubectl logs -n gpu-test${example} ${pod} -c ${ctr}| grep -E "GPU_DEVICE_[0-9]+" | grep -v "RESOURCE_CLAIM"
+      fi
+    done
+  done
+  echo ""
+done
+```
+
+And it's a bunch of data. I mean, stare-and-compare with their repo and result, but... 
+
+You might have to dig in deeper in what actually happened -- like, where do those resourceslices come from?
+
+Now you can delete their stuff:
+
+```
+kubectl delete --wait=false --filename=demo/gpu-test{1,2,3,4,5}.yaml
+```
+
+And, let's remove their cluster: 
+
+```
+kind delete cluster --name dra-example-driver-cluster
+```
+
+## Network DRA! Lionel's POC
+
+So! This part is incomplete... I wish I got further, but I got stuck with mismatched resource versions. DRA went to v1beta1 in K8s 1.32, and... I think that caused me a bunch of heart burn. But, I'm keeping this here for posterity.
+
+Now let's look at Lionel's project: https://github.com/LionelJouin/network-dra
+
+```
+git clone https://github.com/LionelJouin/network-dra
+cd network-dra/
+```
+
+Following his directions I tried `make generate` with errors. No bigs, let's carry on.
+
+```
+make REGISTRY=localhost:5001/network-dra
+```
+
+Then, make the customized k8s
+
+```
+git clone https://github.com/kubernetes/kubernetes.git
+cd kubernetes
+git remote add LionelJouin https://github.com/LionelJouin/kubernetes.git
+git fetch LionelJouin
+git checkout LionelJouin/KEP-4817
+git checkout -b lionel-custom
+```
+
+And then you can build it with:
+
+```
+kind build node-image . --image kindest/node:kep-4817
+```
+
+I had: 
+
+```
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+featureGates:
+  DynamicResourceAllocation: true
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri"]
+    enable_cdi = true
+nodes:
+- role: control-plane
+  image: kindest/node:v1.32.0
+  kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+        extraArgs:
+          runtime-config: "resource.k8s.io/v1beta1=true"
+          v: "1"
+    scheduler:
+        extraArgs:
+          v: "1"
+    controllerManager:
+        extraArgs:
+          v: "1"
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        v: "1"
+- role: worker
+  image: kindest/node:v1.32.0
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        v: "1"
+```
+
+Their cluster...
+
+
+```
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+featureGates:
+  DynamicResourceAllocation: true
+containerdConfigPatches:
+# Enable CDI as described in
+# https://tags.cncf.io/container-device-interface#containerd-configuration
+- |-
+  [plugins."io.containerd.grpc.v1.cri"]
+    enable_cdi = true
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+        extraArgs:
+          runtime-config: "resource.k8s.io/v1beta1=true"
+    scheduler:
+        extraArgs:
+          v: "1"
+    controllerManager:
+        extraArgs:
+          v: "1"
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        v: "1"
+- role: worker
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        v: "1"
+```
+
+Lionel's:
+
+```
+---
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  ipFamily: dual
+  kubeProxyMode: ipvs
+featureGates:
+  "DynamicResourceAllocation": true
+  "DRAResourceClaimDeviceStatus": true
+runtimeConfig:
+  "networking.k8s.io/v1alpha1": true
+  "resource.k8s.io/v1alpha3": true
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri"]
+    enable_cdi = true
+  [plugins.'io.containerd.grpc.v1.cri'.cni]
+    disable_cni = true
+  [plugins."io.containerd.nri.v1.nri"]
+    disable = false
+nodes:
+- role: control-plane
+  image: kindest/node:kep-4817
+- role: worker
+  image: kindest/node:kep-4817
+```
+
+My portmanteau...
+
+```
+---
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  ipFamily: dual
+  kubeProxyMode: ipvs
+featureGates:
+  "DynamicResourceAllocation": true
+  "DRAResourceClaimDeviceStatus": true
+runtimeConfig:
+  "networking.k8s.io/v1alpha1": true
+  "resource.k8s.io/v1alpha3": true
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri"]
+    enable_cdi = true
+  [plugins.'io.containerd.grpc.v1.cri'.cni]
+    disable_cni = true
+  [plugins."io.containerd.nri.v1.nri"]
+    disable = false
+  [plugins."io.containerd.grpc.v1.cri".registry]
+    config_path = "/etc/containerd/certs.d"
+nodes:
+- role: control-plane
+  image: kindest/node:kep-4817
+  kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+        extraArgs:
+          runtime-config: "resource.k8s.io/v1beta1=true"
+    scheduler:
+        extraArgs:
+          v: "1"
+    controllerManager:
+        extraArgs:
+          v: "1"
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        v: "1"
+- role: worker
+  image: kindest/node:kep-4817
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        v: "1"
+    nodeRegistration:
+      kubeletExtraArgs:
+        v: "1"
+- role: worker
+  image: kindest/node:kep-4817
+  kubeadmConfigPatches:
+  - |
+    kind: JoinConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        v: "1"
+```
+
+And:
+
+```
+kind create cluster --name network-dra --config my.cluster.yaml
+```
+
+And I have running pods...
+
+Load the image...
+
+```
+kind load docker-image localhost:5001/network-dra/network-nri-plugin:latest
+```
+
+Install plugins...
+
+```
+kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/e2e/templates/cni-install.yml.j2
+```
+
+You can uninstall with:
+
+
+I had to push to a public registry...
+
+```
+helm install network-dra deployments/network-DRA --set registry=docker.io/dougbtv
+```
+
+```
+docker tag network-nri-plugin dougbtv/network-nri-plugin:latest
+docker push dougbtv/network-nri-plugin:latest
+```
+
+```
+helm uninstall network-dra
+```
+
+Now let's look at the demo...
+
+
+```
+cat examples/demo-a.yaml
+```
+
+Most interesting, we want to look at:
+
+```
+apiVersion: resource.k8s.io/v1alpha3
+kind: ResourceClaim
+metadata:
+  name: macvlan-eth0-attachment
+spec:
+  devices:
+    requests:
+    - name: macvlan-eth0
+      deviceClassName: network-interface
+    config:
+    - requests:
+      - macvlan-eth0
+      opaque:
+        driver: poc.dra.networking
+        parameters:
+          interface: "net1"
+          config:
+            cniVersion: 1.0.0
+            name: macvlan-eth0
+            plugins:
+            - type: macvlan
+              master: eth0
+              mode: bridge
+              ipam:
+                type: host-local
+                ranges:
+                - - subnet: 10.10.1.0/24
+```
+
+Well -- look at that, looks like [a YAML-ized version of the macvlan CNI config!](https://www.cni.dev/plugins/current/main/macvlan/).
+
+That is, because it is.
+
+And, the pod has a little something to look at:
+
+```
+  resourceClaims:
+  - name: macvlan-eth0-attachment
+    resourceClaimName: macvlan-eth0-attachment
+```
+
+And then I got stuck -- can you get further?

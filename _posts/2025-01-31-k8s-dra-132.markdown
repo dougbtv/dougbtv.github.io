@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-01-31 09:02:00-05:00
+date: 2025-01-31 09:03:00-05:00
 layout: post
 slug: k8s-dra-132
 title: Kubernetes Dynamic Resource Allocation (DRA) for... Networking?

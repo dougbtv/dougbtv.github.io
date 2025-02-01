@@ -56,7 +56,7 @@ Device plugins, while they could do the job generally, have only that counter. T
 
 The design of device plugins was weighted towards allocating compute devices, like GPUs and FPGAs. SR-IOV network devices don't need *just* allocation, they also need *configuration*. 
 
-So, the Network Plumbing Working Group put together, "The Device Info Spec", see: https://github.com/k8snetworkplumbingwg/device-info-spec
+So, the Network Plumbing Working Group put together, "[The Device Info Spec](https://github.com/k8snetworkplumbingwg/device-info-spec)" [github]
 
 This allowed us to store some configurations, which we laid down on disk on nodes, in order for the terminal CNI plugin to pick up that configuration information, which we needed to do at the time, but... It's got a lot of moving parts, including the use of Multus CNI as an intermediary to pass that information along. I'm a Multus CNI maintainer and I sort of wince whenever I have to go near that code to be frank with you. And when I say "frank" -- I don't mean frankfurters (actually, yes I do).
 

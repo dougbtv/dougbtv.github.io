@@ -68,9 +68,7 @@ Here's the other part... This might just totally bypass CNI. Which, basically ev
 
 CNI was designed to be “container orchestration agnostic”—not Kubernetes-specific. That was a smart, community-friendly move at the time, but it also means CNI doesn’t have deep Kubernetes integrations today. If you're an "all day every day" kind of Kubernetes developer, CNI looks like a total non-sequitur which can only be described as "a total pain in the buns" (not hot dog buns, but, pain in the butt). If you want to hear more about this, check out [my lightning talk about this at FOSDEM in 2023](https://archive.fosdem.org/2023/schedule/event/cni_2_0/).
 
-The other side is... CNI is also *extremely* modular, and allows components to interoperate. It allows you to customize your clusters and integrate say, your own solutions, with a primary CNI that you choose, and even integrate vendor solutions. If you're a cluster operator, this may matter to you A LOT. If you're a cloud operator -- maybe you don't care at all. You own the cluster and you configure it, the user is a "fool" who shouldn't touch that. To me, that does make sense from a market standpoint, but, I think it stinks from a consumer standpoint, and double stinks from a community standpoint.
-
-I've noticed that some cloud providers contributing to Kubernetes replace the kubelet entirely with proprietary downstream solutions. While I get why they do it, it creates a disconnect between how Kubernetes is developed upstream and how users experience it in the real world. Our designs should prioritize the community’s needs first, not just cloud operator convenience.
+The other side is... CNI is also *extremely* modular, and allows components to interoperate. It allows you to customize your clusters and integrate say, your own solutions, with a primary CNI that you choose, and even integrate vendor solutions.
 
 What I'm afraid of is that if we ignore CNI: We're going to blackbox things from people who do manage their own clusters. We might also blackbox it from people who support those clusters -- even in a proprietary public cloud provider context.
 

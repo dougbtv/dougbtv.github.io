@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-01-31 09:03:00-05:00
+date: 2025-01-31 09:04:00-05:00
 layout: post
 slug: k8s-dra-132
 title: Kubernetes Dynamic Resource Allocation (DRA) for... Networking?
@@ -10,7 +10,7 @@ category: nfvpe
 
 So, are you familiar with DRA? [Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) (k8s docs linked)? It's for "requesting and sharing resources between pods", like, if you've got a hardware resource you want to use, say, a GPU in your pod, or maybe you're, like, cooler than that and you wanna [connect a smart toaster](https://www.livinginternet.com/i/ia_myths_toast.htm) to your pods... Well, you could use DRA to help Kubernetes schedule your pod on a node that has a connected toaster, or, well, yeah a GPU. Popular for AI/ML or so I hear, have you? :)
 
-Today, we're going to chat about using DRA for networking, and I've got a pointer and an opinionated tutorial and how to run through using an example DRA driver so you can get your hands on it, and we'll -- so if you'd rather that, you can skip my rundown -- fire up your scroll wheel on turbo or start spamming page down!
+Today, we're going to chat about using DRA for networking, and I've got a pointer and an opinionated tutorial and how to run through using an example DRA driver so you can get your hands on it -- so if you'd rather that, you can skip my rundown -- fire up your scroll wheel on turbo or start spamming page down!
 
 ## DRA vs. Device Plugins
 

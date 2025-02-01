@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-01-31 09:04:00-05:00
+date: 2025-01-31 09:05:00-05:00
 layout: post
 slug: k8s-dra-132
 title: Kubernetes Dynamic Resource Allocation (DRA) for... Networking?
@@ -82,7 +82,7 @@ I think that potentially that [the CNI DRA driver](https://github.com/kubernetes
 
 The primary author and legendary rad developer, [Lionel Jouin](https://github.com/LionelJouin) has been doing A LOT in this space, and has been putting together some excellent PoCs for quite a while to really explore the space.
 
-Lionel was also pivotal in getting a "resource claim status" enabled -- see: https://github.com/kubernetes/enhancements/issues/4817 & https://github.com/kubernetes/kubernetes/pull/128240
+Lionel was also pivotal in getting a "resource claim status" enabled -- see: (github.com/kubernetes/enhancements#4817)[https://github.com/kubernetes/enhancements/issues/4817] & (github.com/kubernetes/kubernetes#128240)[https://github.com/kubernetes/kubernetes/pull/128240]
  
 Keep your eyes on the DRA CNI driver repo and track it -- and, best yet -- think about contributing to it.
 

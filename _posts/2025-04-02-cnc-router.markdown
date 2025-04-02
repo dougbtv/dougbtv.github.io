@@ -4,7 +4,7 @@ comments: true
 date: 2025-04-02 11:45:00-05:00
 layout: post
 slug: cnc-router
-title: "Sawdust and Serial Ports: Rescuing a 90s CNC Router"
+title: Sawdust and Serial Ports -- Rescuing a 90s CNC Router
 category: nfvpe
 ---
 

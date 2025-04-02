@@ -12,7 +12,7 @@ A couple of summers ago my dad was telling me this story where a customer was in
 
 > Hey look Mom! It's an antique computer!
 
-![the antique computer, err monitor and keyboard, in all its glory](https://imgur.com/BOBfDru)
+![the antique computer, err monitor and keyboard, in all its glory](https://i.imgur.com/BOBfDru.jpeg)
 
 Which I found absolutely hilarious, but... I didn't realize that PC was still alive -- it's a workstation that operates a CNC router that's a core part of my dad's business, [Briar Hill Signworks](https://briarhillsignworks.com/) (don't worry, his website has a 90s feel to it too! But the signs are awesome). He specializes in what I'd consider New England-style carved gold leafed wooden signs. They're gorgeous and he's really perfected the craft, as well his partner who is a painter and (a quite masterful!) gilder, meanwhile he's quite modest about it overall. 
 
@@ -28,7 +28,7 @@ It's a got an Intel 266mhz processor running Windows 98 SE, I believe it was ori
 
 The router is connected over a DB-25 pin cable which is converted to DB-9 pin and works over a serial COM port (or that's how it was last configured, so I kept it that way!). My dad uses two pieces of software on this machine primarily, CASMate and Enroute -- one is like a CAD for sign design and Enroute is used for creating the tool paths (the instructions to send to the CNC router), and then it also has the drivers to actually communicate with the router itself. But you see -- this was rather expensive software at its time, and it's protected with a [software protection dongle](https://en.wikipedia.org/wiki/Software_protection_dongle). I think specifically a HASP (which stands for "Hardware Against Software Piracy") dongle, one that works over a DB25 LPT (parallel printer) port.
 
-![the HASP](https://imgur.com/run5G05)
+![the HASP](https://i.imgur.com/run5G05.jpeg)
 
 *This is the HASP (attached to the new PC workstation), what a relic of a different era.*
 
@@ -38,7 +38,7 @@ But, that company doesn't produce CNC routers anymore, they seem to do [CNC lase
 
 Growing up, my father started this business in a woodshop that was an outbuilding to our home, and he ran the CNC router in our garage before he moved the business to [a (rather scenic) red barn in Sutton New Hampshire](https://maps.app.goo.gl/4oZ4StV7jDBH2hQy8) (Google street view). As a budding young tech person -- I was *STOKED* for the CNC router to arrive. My next door neighbor was also pretty excited and he RAN to the house to let us know the flatbed delivering the router was pulling up. The CNC router seemed like pure magic. Fascinating to watch it carve a sign. When my dad bought it, it came with a service where someone came to your location to train you how to use it. I begged my dad to let me stay home from school so that I could also learn how to use it. He said no -- if he could go back in time knowing I'll be there to help now, I'll bet he'd say yes, but... Seriously who needs a know-it-all 15 year old (who should probably be at school) bugging you when you're trying to learn something critical for building your business. I still learned a lot along the way (and even worked at the shop for a year, too).
 
-![the barn](https://imgur.com/kPrk0C3)
+![the barn](https://i.imgur.com/kPrk0C3.png)
 
 My original game plan was to take the HDD out of the eMachines computer and hook it up with an IDE adapter `dd` it and capture an image so that I could run it as a VM. But I explained the risks to my dad -- this computer is 25, and in computer years that's 175, so, any operation -- including taking the hood off to pop out an HDD -- might totally turn this thing to dust. 
 
@@ -62,7 +62,7 @@ I used a bunch of help from ChatGPT, it's great at generating some instructions 
 
 And... the tour de force of the first day -- I got it to talk to the parallel port dongle and got the proprietary software to load reading whatever auth info from the HASP. I knew a lot of things were going just right to have that happen.
 
-![yup, you can virtualize that](https://imgur.com/2yKDLFZ)
+![yup, you can virtualize that](https://i.imgur.com/2yKDLFZ.jpeg)
 
 *Remember that fun visual error? It's like... a failure to clear the video buffer or something? Looks like a win in windows solitaire. I tried to Google the name of this error, there isn't one, apparently*
 
@@ -90,7 +90,7 @@ In parallel while waiting on support, I was also working through the setup of th
 
 It was time to get to basics: Stare and compare. What's different? Spot the difference between these two pictures. I went step by step through all the stuff I needed to look at. One by one.
 
-![](https://imgur.com/Ea1MZaF)
+![](https://i.imgur.com/Ea1MZaF.jpeg)
 
 *This wasn't exactly what I was comparing, but to give you an idea, it's actually how the "plate" is defined, how you define where the substrate is on the table.*
 

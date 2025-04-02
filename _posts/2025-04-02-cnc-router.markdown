@@ -44,7 +44,7 @@ My original game plan was to take the HDD out of the eMachines computer and hook
 
 He didn't want to do that. Understandably. So, I did it the hard way, a stare-and-compare, and I also was lucky enough to get some files off of it over the network. My dad in desperation had jiggled the ethernet cable attached to it and got the machine running for a few more jobs before I could make it to the barn to help out. Maybe it was just a dodgy network cable that was the problem all along -- who knows, maybe that thing would've gone another 25 years? But, regardless.
 
-My dad was losing sleep over this. I get it. It's production. It's how you make money. I really looked at it as a fun retro computing challenge, and a good way to help family. But, it's family and it's business, and it's production. Guy was freaked, and I don't blame him. This kind of stuff also BOTHERS me. I don't like it when production is down, that bothers me instrinsically. 
+My dad was losing sleep over this. I get it. It's production. It's how you make money. I really looked at it as a fun retro computing challenge, and a good way to help family. But, it's family and it's business, and it's production. Guy was freaked, and I don't blame him. This kind of stuff also BOTHERS me. I don't like it when production is down, that bothers my most basic instincts. 
 
 ## In preparation and the first day on site...
 

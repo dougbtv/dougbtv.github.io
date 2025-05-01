@@ -1,0 +1,57 @@
+---
+author: dougbtv
+comments: true
+date: 2025-04-30 9:00:00-05:00
+layout: post
+slug: fedora-42-5060ti
+title: New Fedora 42 workstation with wayland and a Nvidia GPU, who dis?
+category: nfvpe
+---
+
+I had been putting off upgrading Fedora because... [Wayland](https://docs.fedoraproject.org/en-US/fedora/f40/system-administrators-guide/Wayland/) is becoming unvoidable. And I've been avoiding it for a couple releases now. And [Fedora 42](https://fedoramagazine.org/announcing-fedora-linux-42/) is out. And since it's [the answer to life, the universe and everything](https://en.wikipedia.org/wiki/Phrases_from_The_Hitchhiker%27s_Guide_to_the_Galaxy#The_Answer_to_the_Ultimate_Question_of_Life,_the_Universe,_and_Everything_is_42), I can't deny it. Wayland is the future.
+
+Primarily because I've been an [i3wm](https://i3wm.org/) user, it's a "[twm](https://en.wikipedia.org/wiki/Twm)" (tiling window manager, or that's what I call it). And I've gotten mighty cozy in it, but eventually, you have to move on! So, alas, I'm going back to GNOME, and getting my life setup with Wayland.
+
+My main desktop workstation is, and has been Fedora for... basically as long as I've been a professional.
+
+![fedora core 3](https://i.imgur.com/ysY5A0y.jpeg)
+
+*Yep! Fedora Core 3! Back in my day! Err, before Fedora 7, we called it Fedora Core*
+
+People can remember where they were during major historical events, and I can remember where I was when someone told me that I probably wouldn't be using Red Hat Linux anymore, but instead... Fedora. I sandbagged for a release, I think, and eventually got on board at Fedora Core 2. Unfortunately I only have photographic proof of FC3! Apparently I do that and sandbag a release or two, still doing it!
+
+Here's the thing -- I have a bunch of great machines my lab, a media workstation (for graphics, both traditional and AI/ML as well as music production), a GPU lab machine (for training runs and long running jobs), and a virtualization host, and... Also a primary developer's workstation. That is kind of the vehicle to use all the better machines, so, it hasn't gotten love in a while. But I knew I had to upgrade, and... That machine was getting a little draggy, so, time to upgrade.
+
+## Getting my life back together as a i3wm user.
+
+My good bud Leif mentioned [this article from sudoscience](https://sudoscience.blog/2024/02/04/turning-gnome-into-a-tiling-window-manager/) about turning gnome into a tiling window manager. He got me into i3wm, so, thanks for throwing me a line.
+
+I settled on trying a few things that I wound up keeping and liking, so far...
+
+* [Pop! Shell](https://github.com/pop-os/shell)
+* [Blackbox terminal](https://github.com/yonasBSD/blackbox-terminal)
+* [input-leap](https://github.com/input-leap/input-leap) as an upgrade to Barrier
+
+I use Barrier so that I can use my work laptop, my media workstation, and my developer's workstation all at the same time. But... Guess what? Apparently the maintainers have started their own fork, input-leap. That's probably good news, but... I did struggle a bit. Wayland has some nice security considerations, so, you can't start it without manually accepting the remote connection, which is... Sort of a bummer, so I have to KVM switch (which is really just a USB switch for my inputs) in order to wake the machine and accept the connection. The media workstation needs to be primary -- especially because it uses a graphical pen tablet.
+
+I also had to hack together some stuff to SSH my clipboard (yuuuuck) to be able to use it conveniently between boxen, because, that's also a security issue. So, remote control, not as good, but... I'm going to live with it and work around it for now.
+
+Pop Shell is treating me fairly well, at least I'm able to do most stuff that I could do before, just some clunking around, still getting all my chords straightened out.
+
+## Getting my Nvidia GPU to fire up.
+
+I have other better GPUs in my lab, but I needed *something* in this machine, I wound up opting for a 5060ti because I could both get a good deal, and these things have a bunch of VRAM these days, so, I was kind of pumped to have that much vram around, at least it makes some things possible even if it's got way less CUDA cores than my other GPUs in the lab. 
+
+However, I'm kind of in the early adopter phase, both a 50-series and an O/S that was just released 2 weeks ago.
+
+Thank heavens for if-not-true-then-false (inttf)! I have used these articles for Fedora setups for a while now, that author deserves an award.
+
+* [inttf Fedora Nvidia Guide 40/41/42](https://www.if-not-true-then-false.com/2015/fedora-nvidia-guide/)
+* [inttf Plymouth setup](https://www.if-not-true-then-false.com/2015/fedora-nvidia-guide/2/)
+
+These saved my bacon. I tried installing from fusion repos, and I wasn't having good luck. I did figure out that my card does require a beta driver, so... That might be related.
+
+This [reddit post about secure boot with Nvidia drivers in Fedora](https://www.reddit.com/r/Fedora/comments/18bj1kt/fedora_nvidia_secure_boot/) was also hugely helpful. I can't seem to disable on my motherboard (which I looked into), but it forced me to figure out how to sign the driver (which isn't bad).
+
+Mostly, after I got going with the inttf articles, I was making progress. I did have to reboot umpteen times while I really screwed it up, and also tested my grub2 know how (I wasn't getting a clean boot when I first plugged in the video card, naturally). Unfortunately, I'm still getting a slow boot, an I lost graphical boot, despite inttf's awesome Plymouth setup. I think I can remember losing graphical boot... many... many times in my Fedora career. I tried a few times, and I'll try again as the drivers get updates and whatnot, but for now, I'm living with it.
+

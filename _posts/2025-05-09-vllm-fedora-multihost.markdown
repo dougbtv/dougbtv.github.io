@@ -1,10 +1,10 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-05-09 9:00:00-05:00
+date: 2025-05-09 9:05:00-05:00
 layout: post
 slug: vllm-fedora-multihost
-title: Distributed vLLM Inference
+title: vLLM at Home -- Distributed Inference with Fedora and a 50-Series GPU
 category: nfvpe
 ---
 

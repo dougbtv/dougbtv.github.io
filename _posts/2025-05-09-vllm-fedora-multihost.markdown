@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-05-09 9:05:00-05:00
+date: 2025-05-09 9:06:00-05:00
 layout: post
 slug: vllm-fedora-multihost
 title: vLLM at Home -- Distributed Inference with Fedora and a 50-Series GPU
@@ -70,7 +70,7 @@ If you're not familiar with CDI, it's the "container device interface", and [the
 
 ### Using the official vLLM Docker image
 
-I picked up [the docs for using vllm's official docker image](https://docs.vllm.ai/en/stable/deployment/docker.html), which I think -- in most cases, this will probably work with more hardware, but as you'll see.
+I picked up [the docs for using vllm's official docker image](https://docs.vllm.ai/en/stable/deployment/docker.html), which I think -- in most cases, this will probably work with most hardware, but as you'll see, we needed a little bit more for the 50-series.
 
 And then I pulled with:
 
@@ -213,8 +213,6 @@ And it "works"!
 ```
 
 Maybe just "Montpelier" would be an appropriate answer.
-
-I do think I learned something here though...
 
 But, like [The Bad News Bears](https://en.wikipedia.org/wiki/The_Bad_News_Bears), sometimes I just gotta try it, put the heart into it. And that part worked! I got the 50-series working with vLLM which was half the goal.
 

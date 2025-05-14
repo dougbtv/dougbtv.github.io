@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-05-09 9:06:00-05:00
+date: 2025-05-09 9:07:00-05:00
 layout: post
 slug: vllm-fedora-multihost
 title: vLLM at Home -- Distributed Inference with Fedora and a 50-Series GPU
@@ -29,7 +29,7 @@ I **used Podman on Fedora**, with `nvidia-container-toolkit`, and CDI setup for 
 
 **Distributed inference handled via Ray**; using `--net=host` for simplicity in a lab environment.
 
-**Built image**: [dougbtv/vllm](https://hub.docker.com/repository/docker/dougbtv/vllm/general) (~26GB)
+**Built image**: [quay.io/dosmith/vllm](https://quay.io/repository/dosmith/vllm) & [docker.io/dougbtv/vllm](https://hub.docker.com/repository/docker/dougbtv/vllm/general) (~26GB)
 
 **Bonus**: Played with structured outputs -- super awesome.
 
@@ -149,10 +149,10 @@ During the build -- I had a couple unlucky crashes (which I didn't go deeply int
 
 I posted [my originally working Dockerfile as a GitHub gist](https://gist.github.com/dougbtv/d94ce156654462c02b5dfaf885a38479) and a diff of it (used against commit `6115b115826040ad1f49b69a8b4fdd59f0df5113`, but! Be warned, I think at some point in the Dockerfile build process it pulls a fresh head from a git remote).
 
-Some hiccough prevented me from logging into quay because of some weirdness, so I pushed...
+Some hiccough prevented me from logging into quay because of some weirdness, so I pushed... (Update! I have it [on quay now](https://quay.io/repository/dosmith/vllm)!)
 
 ```bash
-docker.io/dougbtv/vllm
+quay.io/dosmith/vllm
 ```
 
 Which you can find [on Dockerhub as dougbtv/vllm](https://hub.docker.com/repository/docker/dougbtv/vllm/general). It's about 26 gigs, so, [buyer beware](https://en.wikipedia.org/wiki/Caveat_emptor).

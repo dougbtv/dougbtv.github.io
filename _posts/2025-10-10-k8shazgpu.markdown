@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-10-06 08:01:00-04:00
+date: 2025-10-10 10:01:00-04:00
 layout: post
 slug: k8shazgpu
 title: k8shazgpu -- an extension of canhazgpu for vLLM development on remote GPUs in a k8s cluster

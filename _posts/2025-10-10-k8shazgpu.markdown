@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-10-10 10:01:00-04:00
+date: 2025-10-10 10:02:00-04:00
 layout: post
 slug: k8shazgpu
 title: k8shazgpu -- an extension of canhazgpu for vLLM development on remote GPUs in a k8s cluster
@@ -17,6 +17,28 @@ And you'd guess what my next thought would be: Let's use [Kubernetes Dynamic Res
 Today, some context and a demo, and next time, I'll try to get this to a point where you can spin up your own cluster and allocate workloads on it dynamically. But today -- grab your cappuccino and let's walk through it quick. Well, at least it's cappuccino o'clock here, and mine happens to have Stewart's whole milk, as I was just in the Adirondacks this past weekend on some paddle day trips. The locals out there pronounce it **STORTS**. It's a convenience store, but also known for their dairy, makes for fabled ice cream stops and was recently awarded the best milk in NY state (again). 
 
 Oh yeah -- by the way if you didn't catch it immediately `canhazgpu` is a reference to the [I can has cheezburger](https://knowyourmeme.com/memes/sites/cheezburger) meme, which is kind of a king of a meme empire.
+
+## tl;dr -- Just give me the youtube video!
+
+If you'd like to jump right in and see it in action... Here you go! Make sure to click the chapters if you're impatient.
+
+...There's also an [asciinema demo](https://asciinema.org/a/745629) later in the article if you prefer that!
+
+<figure>
+    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+        <iframe
+            src="https://www.youtube.com/embed/ASATsyY98I0"
+            title="k8shazgpu demo"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            style="position:absolute;top:0;left:0;width:100%;height:100%;">
+        </iframe>
+    </div>
+    <figcaption>Demo: k8shazgpu — <a href="https://www.youtube.com/watch?v=ASATsyY98I0">Watch on YouTube</a></figcaption>
+</figure>
+
+
 
 ## Some backstory...
 

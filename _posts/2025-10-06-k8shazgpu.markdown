@@ -85,7 +85,7 @@ It's a bit raw (the tmux panes render funny in asciinema), sorry, but it shows t
 
 Kubernetes 1.34 shipped in August 2025 with DRA APIs finally graduated to GA. My buddy [Miguel Duarte](https://github.com/maiqueb) has [a pull request the bumps our code to the new `v1` API](https://github.com/dougbtv/canhazgpu/pull/2). That means the controller is ready for clusters running the latest release. (For users, nothing would change -- you still don't need to touch any YAML, or even understand the DRA primitives! phew!).
 
-Miguel and I worked on [a talk about DRA for networking in Kubernetes](https://archive.fosdem.org/2025/schedule/event/fosdem-2025-4510-evolving-multi-network-in-kubernetes-from-pod-spec-to-dynamic-resource-allocation/) at FOSDEM last year, and I'm looking forward to batting around some ideas about how this further pushes the conversation about 
+Miguel and I worked on [a talk about DRA for networking in Kubernetes](https://archive.fosdem.org/2025/schedule/event/fosdem-2025-4510-evolving-multi-network-in-kubernetes-from-pod-spec-to-dynamic-resource-allocation/) at FOSDEM last year, and I'm looking forward to batting around some ideas about how this further pushes the conversation about high performance computing environments -- both for AI/ML use cases as well as high performance networking use cases, which I'm more and more convinced are intertwined.
 
 If you're curious about the code, check out the branch [`k8shazgpu-demo-worthy`](https://github.com/dougbtv/canhazgpu/tree/k8shazgpu-demo-worthy). Miguel's PR is a small but important patch that removes `v1beta1` and updates our manifests for DRA's GA.
 
@@ -98,7 +98,7 @@ I'm looking forward to seeing if I can garner some adoption of this tool among m
 But, I have a feeling there's a few other directions to move in...
 
 * I'd love to share further with people how they can learn DRA and learn to utilize it as is it now.
-* Right now `k8shazgpu` is for X-number of GPUs on a single host -- your workload is limited to a single host. What if your workload is multi-host, like [llm-d](https://github.com/llm-d/llm-d)
+* Right now `k8shazgpu` is for X-number of GPUs on a single host -- your workload is limited to a single host. What if your workload is multi-host, like [llm-d](https://github.com/llm-d/llm-d)?
 * I'm *rather* curious about how that impacts networking across boxes.
 
 Until next time, enjoy your cappuccino and happy vibe hacking!

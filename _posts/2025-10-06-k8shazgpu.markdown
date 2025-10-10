@@ -48,7 +48,7 @@ I decided I wanted to combine both of these things:
 
 A DRA driver based on `canhazgpu` seemed to be just the right direction.
 
-So I fired up Claude Code (and GitHub Copilot), and drank a LOT of coffee, and brewed up this demo...
+So I fired up Claude Code (and GitHub Copilot), drank a LOT of coffee, and brewed up this demo...
 
 ## Why `k8shazgpu`?
 

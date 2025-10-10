@@ -1,0 +1,104 @@
+---
+author: dougbtv
+comments: true
+date: 2025-10-10 10:01:00-04:00
+layout: post
+slug: k8shazgpu
+title: k8shazgpu -- an extension of canhazgpu for vLLM development on remote GPUs in a k8s cluster
+category: nfvpe
+---
+
+I've put together an improvement on [a rad tool called **canhazgpu**](https://github.com/russellb/canhazgpu). My buddy [Russell](https://github.com/russellb) built this tool to replace *"ye ole spreadsheet"* the team would use to reserve GPUs on a shared machine. It’s an awesome improvement for developers sharing GPUs -- `canhazgpu` handles all the GPU allocation we used to track manually (on a, AHEM, *spreadsheet* if you didn’t catch that the first time). It’s primarily designed for a single host.
+
+I started to wonder: *What if we wound up extending this tool for a cluster of machines?*
+
+And you'd guess what my next thought would be: Let's use [Kubernetes Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/) (DRA) -- well you'd make that guess if you'd read [my article about k8s DRA for networking](https://dougbtv.com/nfvpe/2025/01/31/k8s-dra-132/). But it's partially because this is the kind of thing that DRA is designed for: Scheduling workloads based on limited and changing resources on the cluster, especially those that are hardware bound (Like GPUs [and, yes, sometimes network devices!]). Side note: [DRA *just* graduated to GA in K8s 1.34](https://kubernetes.io/blog/2025/09/01/kubernetes-v1-34-dra-updates/), about a month ago now!
+
+Today, some context and a demo, and next time, I'll try to get this to a point where you can spin up your own cluster and allocate workloads on it dynamically. But today -- grab your cappuccino and let's walk through it quick. Well, at least it's cappuccino o'clock here, and mine happens to have Stewart's whole milk, as I was just in the Adirondacks this past weekend on some paddle day trips. The locals out there pronounce it **STORTS**. It's a convenience store, but also known for their dairy, makes for fabled ice cream stops and was recently awarded the best milk in NY state (again). 
+
+Oh yeah -- by the way if you didn't catch it immediately `canhazgpu` is a reference to the [I can has cheezburger](https://knowyourmeme.com/memes/sites/cheezburger) meme, which is kind of a king of a meme empire.
+
+## Some backstory...
+
+Quick history on `canhazgpu`: Folks in my team have a GPU server that they refer to as ["Beaker"](https://en.wikipedia.org/wiki/Beaker_(Muppet)) (they give Muppet nicknames to their machines), it's got 8 high powered GPUs, and we recently rebuilt it, and I added automation to keep it under config management. But, Russell was a real hero to the developer experience when he put together `canhazgpu` -- because previously people were looking up who had reserved GPUs in a spreadsheet.
+
+So instead of looking up the GPUs in a spreadsheet, and logging your own use, you'd just type...
+
+```
+canhazgpu run --gpus 2 -- vllm serve my/model
+```
+
+`canhazgpu` figures out which GPUs are available on the machine, and then sets `CUDA_VISIBLE_DEVICES`, sets their reservation in a local data store, and then runs the command after the `--`, sorta like `sudo echo make me a sandwich` runs everything after `sudo`.
+
+It's really pretty too, has a beautiful `canhazgpu status` to show who's using what, it uses a heartbeat pattern to figure out who's using what and when they're done, and can even detect usage outside of `canhazgpu` if someone didn't use it.
+
+The team has adopted it pretty quickly, and Russell's been sending off super vibe code agents to bug fix it, and of course with him puppeteering it like some kind of puppet virtuoso. 
+
+I've been working a new role lately, and have been managing some of this infra (including Beaker) in my new role as an MLOps engineer, and it includes provisioning machines for kind of two classes of use: automation systems, and developer workstations. So I've been slanging Ansible playbooks.
+
+Well... I got to thinking, what if we could scale this usage for canhazgpu to multiple machines? 
+
+On top of that, I've been collaborating with the upstream SIG-CI for vLLM. We manage [the ci infra for vLLM](https://github.com/vllm-project/ci-infra) and are working to improve how our CI works. I've been proposing some changes to how Docker images are built and run in order to get some more efficiency, and better developer experience for getting CI signal quickly.
+
+I decided I wanted to combine both of these things:
+
+* The ease of use of `canhazgpu`
+* Speedy developer test runs of vLLM.
+* Kubernetes.
+
+A DRA driver based on `canhazgpu` seemed to be just the right direction.
+
+So I fired up Claude Code (and GitHub Copilot), drank a LOT of coffee, and brewed up this demo...
+
+## Why `k8shazgpu`?
+
+While `canhazgpu` keeps sharing simple on one box, `k8shazgpu` scales that same philosophy across an entire cluster.
+
+My goal was to make a Street Fighter-style combo of the ease of canhazgpu with the power of Kubernetes and dynamic resource allocation. The result is a DRA driver and controller that lets you request a GPU on any machine in your k8s cluster.  Under the hood, `k8shazgpu` defines custom **ResourceClaims**, maintains a cache of images and git repos, and runs node agents that manage GPU allocation. When you ask for a GPU, the controller provisions a vLLM pod with the right image and mounts the cache, so your model starts serving almost immediately. 
+
+Key features include:
+
+- **Declarative resource claims:** you ask for a GPU and `k8shazgpu` uses Kubernetes' Dynamic Resource Allocation to fulfill the request.
+- **Intelligent caching:** cache plans describe what images, repos and models should be pre‑fetched; node agents keep those caches warm.
+- **vLLM integration:** `k8shazgpu` automatically detects when you're running from a vLLM checkout, figures out the merge‑base, packages your local changes and applies them in the container before launching.
+- **Simple CLI:** basic commands like `status`, `vllm run`, and `cleanup` make the tooling approachable.
+
+To make a test run, you'd simply make a call like:
+
+```
+k8shazgpu vllm run -- vllm serve facebook/opt-125m --gpu-memory-utilization 0.8
+```
+
+Behind the scenes, all the magic is happening: The resource claims and the caching mechanisms (that were inspired by my work on improving CI )
+
+Just like canhazgpu, developers using `k8shazgpu` don't have to know anything about Kubernetes or DRA.  You run the CLI and the controller does the dirty work.  DRA itself is a fantastic building block, but it's not a great end‑user interface.  With `k8shazgpu` we hide that complexity behind a friendly CLI.
+
+## Let's see it in action!
+
+Here's a demo, quick-like, it shows how you operate from a vLLM clone on a client workstation and make a request using `k8shasgpu`.  
+
+[![asciicast](https://asciinema.org/a/745629.svg)](https://asciinema.org/a/745629)
+
+It's a bit raw (the tmux panes render funny in asciinema), sorry, but it shows the basic workflow of requesting a GPU, running vLLM, and queueing up requests when you're out of GPUs. 
+
+## Improvements in flight!
+
+Kubernetes 1.34 shipped in August 2025 with DRA APIs finally graduated to GA. My buddy [Miguel Duarte](https://github.com/maiqueb) has [a pull request the bumps our code to the new `v1` API](https://github.com/dougbtv/canhazgpu/pull/2). That means the controller is ready for clusters running the latest release. (For users, nothing would change -- you still don't need to touch any YAML, or even understand the DRA primitives! phew!).
+
+Miguel and I worked on [a talk about DRA for networking in Kubernetes](https://archive.fosdem.org/2025/schedule/event/fosdem-2025-4510-evolving-multi-network-in-kubernetes-from-pod-spec-to-dynamic-resource-allocation/) at FOSDEM last year, and I'm looking forward to batting around some ideas about how this further pushes the conversation about high performance computing environments -- both for AI/ML use cases as well as high performance networking use cases, which I'm more and more convinced are intertwined.
+
+If you're curious about the code, check out the branch [`k8shazgpu-demo-worthy`](https://github.com/dougbtv/canhazgpu/tree/k8shazgpu-demo-worthy). Miguel's PR is a small but important patch that removes `v1beta1` and updates our manifests for DRA's GA.
+
+## Waxing philosophical on next steps.
+
+Russell's `canhazgpu` is totally "[vibe coded](https://en.wikipedia.org/wiki/Vibe_coding)". So, I build off of that. It's awesome how far Russell got with it, and he's clearly great at using the tool and pushing great results out of it. I've been kind of "vibe coding" for a few years at this point. Even as an experiment I built [a CNI plugin called Surveyor](https://github.com/dougbtv/surveyor-cni) for [a FOSDEM talk](https://archive.fosdem.org/2023/schedule/event/network_cni_automagic/) by writing all the boiler plate with an LLM, and then by copy‑pasting giant hunks of code.  These days the agentic technologies are getting better –- Claude, GitHub Copilot, and even OpenAI's codex helped me prototype k8shazgpu.  It still takes a human to glue everything together, but the tooling makes rapid prototyping fun.
+
+I'm looking forward to seeing if I can garner some adoption of this tool among my team, and looking to see if it can be integrated in, or concepts from it, used in upstream vLLM CI.
+
+But, I have a feeling there's a few other directions to move in...
+
+* I'd love to share further with people how they can learn DRA and learn to utilize it as is it now.
+* Right now `k8shazgpu` is for X-number of GPUs on a single host -- your workload is limited to a single host. What if your workload is multi-host, like [llm-d](https://github.com/llm-d/llm-d)?
+* I'm *rather* curious about how that impacts networking across boxes.
+
+Until next time, enjoy your cappuccino and happy vibe hacking!

@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-12-05 10:00:00-04:00
+date: 2025-12-05 10:00:01-04:00
 layout: post
 slug: comfyui-vllm-omni
 title: Diffusion on vLLM-Omni?! Yup. Here’s How I Plugged It Into ComfyUI.
@@ -13,7 +13,7 @@ Ready to generate images using [vLLM-Omni](https://github.com/vllm-project/vllm-
 ![example not quite tele skier](https://i.imgur.com/qeooWTu.png)
 *Yup, that's a steam punk skier generated in ComfyUI with vLLM in the loop!*
 
-I love myself a good diffusion model. Generative AI for imagery is what sparked my initial interest in the wave of gen AI, and I got really excited when I found out about [vllm-omni](https://github.com/vllm-project/vllm-omni) -- a framework that expands [vLLM](https://github.com/vllm-project/vllm) for *"omni-modality model inference"*, that is, other modes and in combinations of: text, images, video, as input and/or output. This also means for the first time that we can use diffusion models served from vLLM. Needless to say: I'm PUMPED. I'd been meaning to try the omni  model because it's been seeing a lot of hype in [/r/stablediffusion](https://www.reddit.com/r/StableDiffusion/) in the recent past.
+I love myself a good diffusion model. Generative AI for imagery is what sparked my initial interest in the wave of gen AI, and I got really excited when I found out about [vllm-omni](https://github.com/vllm-project/vllm-omni) -- a framework that expands [vLLM](https://github.com/vllm-project/vllm) for *"omni-modality model inference"*, that is, other modes and in combinations of: text, images, video, as input and/or output. This also means for the first time that we can use diffusion models served from vLLM. Needless to say: I'm PUMPED. I'd been meaning to try the Qwen3-image model because it's been seeing a lot of hype in [/r/stablediffusion](https://www.reddit.com/r/StableDiffusion/) in the recent past.
 
 I took the opportunity to build a PoC where I extended vllm-omni with an endpoint (modeled after the DALL-E OpenAI endpoint), so that I could then build a [ComfyUI custom node](https://docs.comfy.org/development/core-concepts/custom-nodes). We're going to have the vllm-omni portion deployed in docker, and you can deploy comfyUI wherever/however you'd like. I was originally inspired by the [offline inference examples for vLLM-omni](https://docs.vllm.ai/projects/vllm-omni/en/latest/user_guide/examples/offline_inference/qwen_image/).
 

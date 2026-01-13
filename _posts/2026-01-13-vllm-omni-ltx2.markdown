@@ -1,10 +1,10 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-01-13 13:00:01-04:00
+date: 2025-01-13 13:00:02-04:00
 layout: post
 slug: vllm-omni-ltx2
-title: An Experimental LTX-2 Integration for vLLM-Omni (Expect Weird Videos)
+title: An Experimental LTX-2 Integration for vLLM-Omni -- Expect Weird Videos
 ---
 
 Well, doggies! When the [LTX-2 video model](https://huggingface.co/Lightricks/LTX-2) landed last week, I went ahead and brewed up an experimental implementation of it in [vllm-omni](https://github.com/vllm-project/vllm-omni), the omni-modality serving layer for [vLLM](https://github.com/vllm-project/vllm).

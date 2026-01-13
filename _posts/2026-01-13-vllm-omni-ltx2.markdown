@@ -1,7 +1,7 @@
 ---
 author: dougbtv
 comments: true
-date: 2025-01-13 13:00:02-04:00
+date: 2026-01-13 13:00:02-04:00
 layout: post
 slug: vllm-omni-ltx2
 title: An Experimental LTX-2 Integration for vLLM-Omni -- Expect Weird Videos
